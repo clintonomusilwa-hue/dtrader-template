@@ -1,7 +1,7 @@
 const moment = require('moment');
 const isEmptyObject = require('@deriv/shared').isEmptyObject;
 const getPropertyValue = require('@deriv/shared').getPropertyValue;
-const getStaticHash = require('_common/utility').getStaticHash;
+import { getStaticHash } from '_common/utility';
 const LocalStore = require('@deriv/shared').LocalStore;
 
 /*
@@ -177,4 +177,4 @@ const SocketCache = (() => {
     };
 })();
 
-module.exports = SocketCache;
+export default SocketCache;

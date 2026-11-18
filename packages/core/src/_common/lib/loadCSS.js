@@ -27,6 +27,6 @@ function loadCSS(href, before, media) {
     return ss;
 }
 
-module.exports = {
+export default {
     loadCSS: loadCSS,
 };

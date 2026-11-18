@@ -1,5 +1,5 @@
 const moment = require('moment');
-const BinarySocket = require('./socket_base');
+import BinarySocket from './socket_base';
 const PromiseUtils = require('@deriv-com/utils').PromiseUtils;
 
 const ServerTime = (() => {
@@ -60,4 +60,4 @@ const ServerTime = (() => {
     };
 })();
 
-module.exports = ServerTime;
+export default ServerTime;

@@ -8,6 +8,6 @@ function loadJS(src) {
     return script;
 }
 
-module.exports = {
+export default {
     loadJS: loadJS,
 };
