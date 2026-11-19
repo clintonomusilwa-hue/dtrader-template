@@ -1,3 +1,4 @@
+import BrandLogo from 'App/Components/Elements/BrandLogo';
 import React from 'react';
 import classNames from 'classnames';
 
