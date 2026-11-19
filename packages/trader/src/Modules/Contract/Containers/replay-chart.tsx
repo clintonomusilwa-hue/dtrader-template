@@ -101,7 +101,7 @@ const ReplayChart = observer(
         const prev_start_epoch = usePrevious(start_epoch);
 
         const has_ended = !!getEndTime(contract_info);
-        const is_dtrader_v2_enabled = isMobile; // V2 for mobile, V1 for desktop
+        const is_dtrader_v2_enabled = true;
 
         if (!symbol) return <Loader />;
 
