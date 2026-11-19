@@ -37,7 +37,7 @@ const HeaderLegacy = observer(() => {
             <div className='header__menu-items'>
                 {isMobile && (
                     <div className='header__logo'>
-                        <DerivProductBrandLightDerivTraderLogoIcon height='32px' width='32px' />
+                        <BrandLogo is_mobile height='30px' />
                     </div>
                 )}
                 {is_logging_in ? (
