@@ -49,6 +49,19 @@ function drawNav() {
         b =>
             (b.onclick = () => {
                 tab = b.dataset.t;
+                window.addEventListener('message', ev => {
+                    if (ev.data && ev.data.type === 'DP_REQ_AUTH' && ev.source) {
+                        ev.source.postMessage(
+                            {
+                                type: 'DP_AUTH',
+                                auth: sessionStorage.getItem('auth_info'),
+                                acct: localStorage.getItem('current_account'),
+                                loginid: localStorage.getItem('active_loginid'),
+                            },
+                            '*'
+                        );
+                    }
+                });
                 drawNav();
                 renderPanel();
             })

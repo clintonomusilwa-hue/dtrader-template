@@ -2070,63 +2070,78 @@ updateFullscreenButton();
 /* DERIV_LIVE_BRIDGE */
 (function () {
     const APP_ID = '34ZWcXDCQi8ZtdAfM1s5X',
-        API = 'https://derivws.com',
-        S = {
-            V10: 'R_10',
-            V25: 'R_25',
-            V50: 'R_50',
-            V75: 'R_75',
-            V100: 'R_100',
-            V10s: '1HZ10V',
-            V25s: '1HZ25V',
-            V50s: '1HZ50V',
-            V75s: '1HZ75V',
-            V100s: '1HZ100V',
-            J10: 'JD10',
-            J25: 'JD25',
-            J50: 'JD50',
-            J75: 'JD75',
-            J100: 'JD100',
-            Bull: 'RDBULL',
-            Bear: 'RDBEAR',
-        },
-        R = Object.fromEntries(Object.entries(S).map(([k, v]) => [v, k])),
-        P = {},
-        CM = {
-            Under: 'DIGITUNDER',
-            Over: 'DIGITOVER',
-            Even: 'DIGITEVEN',
-            Odd: 'DIGITODD',
-            Matches: 'DIGITMATCH',
-            Differs: 'DIGITDIFF',
-            Rise: 'CALL',
-            Fall: 'PUT',
-        };
+        API = 'https://derivws.com';
+    const S = {
+        V10: 'R_10',
+        V25: 'R_25',
+        V50: 'R_50',
+        V75: 'R_75',
+        V100: 'R_100',
+        V10s: '1HZ10V',
+        V25s: '1HZ25V',
+        V50s: '1HZ50V',
+        V75s: '1HZ75V',
+        V100s: '1HZ100V',
+        J10: 'JD10',
+        J25: 'JD25',
+        J50: 'JD50',
+        J75: 'JD75',
+        J100: 'JD100',
+        Bull: 'RDBULL',
+        Bear: 'RDBEAR',
+    };
+    const R = Object.fromEntries(Object.entries(S).map(([k, v]) => [v, k])),
+        P = {};
+    const CM = {
+        Under: 'DIGITUNDER',
+        Over: 'DIGITOVER',
+        Even: 'DIGITEVEN',
+        Odd: 'DIGITODD',
+        Matches: 'DIGITMATCH',
+        Differs: 'DIGITDIFF',
+        Rise: 'CALL',
+        Fall: 'PUT',
+    };
     let ws = null,
         auth = false,
         loginId = null,
         curr = 'USD',
         inFlight = false,
-        cid = null;
-    function getAuthToken() {
-        try {
-            const raw =
-                sessionStorage.getItem('auth_info') ||
-                (window.parent && window.parent.sessionStorage.getItem('auth_info'));
-            if (raw) {
-                const p = JSON.parse(raw);
-                if (p && p.access_token) return p.access_token;
-            }
-        } catch (e) {}
-        return null;
+        cid = null,
+        pAuth = null,
+        pAcct = null,
+        pLogin = null;
+    function setBadges(live, id) {
+        document.querySelectorAll('.demo-account-label').forEach(el => {
+            el.textContent = live ? 'LIVE DERIV' : 'PUBLIC TICKS';
+            el.style.color = live ? '#10B981' : '#38BDF8';
+        });
+        document.querySelectorAll('span.live').forEach(el => {
+            el.innerHTML = '<i></i> ' + (live ? 'live Deriv ticks' : 'live market ticks');
+        });
+        document.querySelectorAll('b').forEach(el => {
+            if (el.textContent.includes('SIMULATED'))
+                el.textContent = live ? 'LIVE DERIV (' + (id || 'Connected') + ')' : 'LIVE DERIV FEED';
+        });
     }
-    function getActiveId() {
+    function getTok() {
         try {
-            return (
-                localStorage.getItem('active_loginid') ||
-                (window.parent && window.parent.localStorage.getItem('active_loginid')) ||
-                null
-            );
+            const r =
+                pAuth ||
+                sessionStorage.getItem('auth_info') ||
+                (window.parent !== window && window.parent.sessionStorage.getItem('auth_info'));
+            return r ? JSON.parse(r).access_token : null;
+        } catch (e) {
+            return null;
+        }
+    }
+    function getAcct() {
+        try {
+            const r =
+                pAcct ||
+                localStorage.getItem('current_account') ||
+                (window.parent !== window && window.parent.localStorage.getItem('current_account'));
+            return r ? JSON.parse(r) : null;
         } catch (e) {
             return null;
         }
@@ -2136,7 +2151,7 @@ updateFullscreenButton();
             d = Math.max(0, Math.round(-Math.log10(p)));
         return Math.round(Number(Number(q).toFixed(d).replace('.', '')));
     }
-    function subMarkets() {
+    function sub() {
         Object.entries(S).forEach(([c, s], i) =>
             setTimeout(() => {
                 if (ws && ws.readyState === 1)
@@ -2161,12 +2176,14 @@ updateFullscreenButton();
         ws = new WebSocket(url);
         ws.onopen = () => {
             if (typeof tickTimer !== 'undefined') clearInterval(tickTimer);
-            if (isOtp) {
-                ws.send(JSON.stringify({ balance: 1, subscribe: 1 }));
-            } else {
-                toast('Live Deriv ticks active (Log in via Deriv to place real trades).');
-            }
-            subMarkets();
+            setBadges(isOtp, loginId);
+            if (isOtp) ws.send(JSON.stringify({ balance: 1, subscribe: 1 }));
+            else toast('Live Deriv market ticks connected.');
+            sub();
+        };
+        ws.onclose = () => {
+            auth = false;
+            setTimeout(boot, 3500);
         };
         ws.onmessage = e => {
             let d;
@@ -2189,6 +2206,7 @@ updateFullscreenButton();
                 if (d.balance.loginid) loginId = d.balance.loginid;
                 if (d.balance.currency) curr = d.balance.currency;
                 state.balance = Number(d.balance.balance);
+                setBadges(true, loginId);
                 if (typeof updateDemoBalance === 'function') updateDemoBalance();
             }
             if (d.msg_type === 'history' && d.history && d.echo_req) {
@@ -2227,82 +2245,67 @@ updateFullscreenButton();
                 cid = d.buy.contract_id;
                 ws.send(JSON.stringify({ proposal_open_contract: 1, contract_id: cid, subscribe: 1 }));
             }
-            if (d.msg_type === 'proposal_open_contract' && d.proposal_open_contract) {
+            if (
+                d.msg_type === 'proposal_open_contract' &&
+                d.proposal_open_contract &&
+                d.proposal_open_contract.is_sold &&
+                cid === d.proposal_open_contract.contract_id
+            ) {
                 const poc = d.proposal_open_contract;
-                if (poc.is_sold && cid === poc.contract_id) {
-                    cid = null;
-                    inFlight = false;
-                    const t = pendingTrade;
-                    pendingTrade = null;
-                    if (poc.subscription && poc.subscription.id)
-                        ws.send(JSON.stringify({ forget: poc.subscription.id }));
-                    if (!t) return;
-                    const profit = Number(poc.profit),
-                        win = profit > 0;
-                    state.payout = Number((state.payout + Number(poc.payout)).toFixed(4));
-                    state.pl = Number((state.pl + profit).toFixed(4));
-                    state.recovering = !win;
-                    if (win) {
-                        state.wins++;
-                        state.streak = 0;
-                        state.martingaleStep = 0;
-                        state.listIndex = 0;
-                    } else {
-                        state.losses++;
-                        state.streak++;
-                        if (state.mode === 'Martingale')
-                            state.martingaleStep = state.martingaleStep >= t.maxSteps ? 0 : state.martingaleStep + 1;
-                        if (state.mode === 'Stakelist' && t.listLength)
-                            state.listIndex = (state.listIndex + 1) % t.listLength;
-                    }
-                    state.trades.push({
-                        market: t.market,
-                        type: t.type,
-                        barrier: t.barrier,
-                        stake: t.stake,
-                        profit,
-                        win,
-                        entry: poc.entry_tick_display_value || '',
-                        exit: poc.exit_tick_display_value || '',
-                    });
-                    journal(
-                        t.market +
-                            ' ' +
-                            t.type +
-                            ' settled: ' +
-                            (win ? 'won' : 'lost') +
-                            ' ' +
-                            (profit >= 0 ? '+' : '') +
-                            profit.toFixed(2) +
-                            ' ' +
-                            curr +
-                            '.'
-                    );
-                    if (typeof renderTotals === 'function') renderTotals();
-                    if (['Matches', 'Differs'].includes(t.type) && state.digitMode === 'random') {
-                        state.targetDigit = Math.floor(Math.random() * 10);
-                        const wd = document.getElementById('whichDigit');
-                        if (wd) wd.value = state.targetDigit;
-                        if (typeof updateConfig === 'function') updateConfig();
-                    }
-                    const rsn =
-                        (typeof limitInputError === 'function' && limitInputError()) ||
-                        (typeof reachedStopLimit === 'function' && reachedStopLimit());
-                    if (rsn && typeof stop === 'function') {
-                        stop(rsn);
-                        toast('Bot stopped: ' + rsn);
-                    }
+                cid = null;
+                inFlight = false;
+                const t = pendingTrade;
+                pendingTrade = null;
+                if (poc.subscription && poc.subscription.id) ws.send(JSON.stringify({ forget: poc.subscription.id }));
+                if (!t) return;
+                const profit = Number(poc.profit),
+                    win = profit > 0;
+                state.payout = Number((state.payout + Number(poc.payout)).toFixed(4));
+                state.pl = Number((state.pl + profit).toFixed(4));
+                state.recovering = !win;
+                if (win) {
+                    state.wins++;
+                    state.streak = 0;
+                    state.martingaleStep = 0;
+                    state.listIndex = 0;
+                } else {
+                    state.losses++;
+                    state.streak++;
+                    if (state.mode === 'Martingale')
+                        state.martingaleStep = state.martingaleStep >= t.maxSteps ? 0 : state.martingaleStep + 1;
+                    if (state.mode === 'Stakelist' && t.listLength)
+                        state.listIndex = (state.listIndex + 1) % t.listLength;
                 }
+                state.trades.push({
+                    market: t.market,
+                    type: t.type,
+                    barrier: t.barrier,
+                    stake: t.stake,
+                    profit,
+                    win,
+                    entry: poc.entry_tick_display_value || '',
+                    exit: poc.exit_tick_display_value || '',
+                });
+                journal(
+                    t.market +
+                        ' ' +
+                        t.type +
+                        ' settled: ' +
+                        (win ? 'won' : 'lost') +
+                        ' ' +
+                        (profit >= 0 ? '+' : '') +
+                        profit.toFixed(2) +
+                        ' ' +
+                        curr +
+                        '.'
+                );
+                if (typeof renderTotals === 'function') renderTotals();
             }
-        };
-        ws.onclose = () => {
-            auth = false;
-            setTimeout(boot, 3500);
         };
     }
     async function boot() {
         if (typeof tickTimer !== 'undefined') clearInterval(tickTimer);
-        const token = getAuthToken();
+        const token = getTok();
         if (!token) {
             openWS('wss://://derivws.com' + APP_ID, false);
             return;
@@ -2311,45 +2314,55 @@ updateFullscreenButton();
             const hdr = { 'Deriv-App-ID': APP_ID, Authorization: 'Bearer ' + token };
             const accRes = await fetch(API + '/trading/v1/options/accounts', { headers: hdr });
             if (!accRes.ok) throw new Error('Accounts ' + accRes.status);
-            const accJson = await accRes.json();
-            const list = accJson.data || [];
-            const wanted = getActiveId();
-            const acct =
-                list.find(a => a.account_id === wanted) || list.find(a => a.account_type === 'demo') || list[0];
-            if (!acct) throw new Error('No Deriv account found');
+            const list = (await accRes.json()).data || [],
+                st = getAcct(),
+                w = (st && st.loginid) || pLogin || localStorage.getItem('active_loginid');
+            const acct = list.find(a => a.account_id === w) || list.find(a => a.account_type === 'demo') || list[0];
+            if (!acct) throw new Error('No account');
             loginId = acct.account_id;
             curr = acct.currency || 'USD';
             state.balance = Number(acct.balance);
+            setBadges(true, loginId);
             if (typeof updateDemoBalance === 'function') updateDemoBalance();
             const otpRes = await fetch(API + '/trading/v1/options/accounts/' + encodeURIComponent(loginId) + '/otp', {
                 method: 'POST',
                 headers: hdr,
             });
             if (!otpRes.ok) throw new Error('OTP ' + otpRes.status);
-            const otpJson = await otpRes.json();
-            const wsUrl = otpJson && otpJson.data && otpJson.data.url;
+            const wsUrl = ((await otpRes.json()).data || {}).url;
             if (!wsUrl) throw new Error('Missing OTP URL');
             auth = true;
             toast('Connected to Deriv (' + loginId + ': ' + state.balance.toFixed(2) + ' ' + curr + ')');
             openWS(wsUrl, true);
         } catch (err) {
-            toast('Deriv auth fallback: ' + err.message);
+            toast('Deriv auth: ' + err.message);
             openWS('wss://://derivws.com' + APP_ID, false);
         }
     }
+    window.addEventListener('message', ev => {
+        if (ev.data && ev.data.type === 'DP_AUTH') {
+            pAuth = ev.data.auth;
+            pAcct = ev.data.acct;
+            pLogin = ev.data.loginid;
+            if (!auth) boot();
+        }
+    });
     startTickTimer = function () {
         if (typeof tickTimer !== 'undefined') clearInterval(tickTimer);
     };
-    const _origBegin = beginDemoTrade;
+    const origBegin = beginDemoTrade;
     beginDemoTrade = function (g) {
-        if (!auth || !ws || ws.readyState !== 1) return _origBegin(g);
-        if (inFlight || pendingTrade) return;
-        if (state.ai && !aiScanValid) return;
+        if (!auth || !ws || ws.readyState !== 1) return origBegin(g);
+        if (inFlight || pendingTrade || (state.ai && !aiScanValid)) return;
         const beh = document.getElementById('afterGate')?.value || '';
-        let ok = g;
-        if (beh === 'Each new occurrence') ok = g && !state.previousGate;
-        else if (beh === 'Ignore while recovering') ok = state.recovering || g;
-        else if (beh === 'Once, then free-run') ok = state.freeRun || g;
+        const ok =
+            beh === 'Each new occurrence'
+                ? g && !state.previousGate
+                : beh === 'Ignore while recovering'
+                  ? state.recovering || g
+                  : beh === 'Once, then free-run'
+                    ? state.freeRun || g
+                    : g;
         if (!ok) return;
         const err = limitInputError() || reachedStopLimit() || stakeError();
         if (err) {
@@ -2360,10 +2373,10 @@ updateFullscreenButton();
         const stake = Number(nextStake());
         let type = state.type;
         if (state.alternate && state.trades.length % 2) type = type === 'Under' ? 'Over' : 'Under';
-        const ct = CM[type] || 'DIGITUNDER';
-        const bar = ['Matches', 'Differs', 'Under', 'Over'].includes(type) ? String(state.targetDigit) : undefined;
-        const dur = Math.max(1, Math.min(10, Math.floor(Number(document.getElementById('duration')?.value) || 1)));
-        const sym = S[state.market] || 'R_75';
+        const ct = CM[type] || 'DIGITUNDER',
+            bar = ['Matches', 'Differs', 'Under', 'Over'].includes(type) ? String(state.targetDigit) : undefined;
+        const dur = Math.max(1, Math.min(10, Math.floor(Number(document.getElementById('duration')?.value) || 1))),
+            sym = S[state.market] || 'R_75';
         pendingTrade = {
             market: state.market,
             type,
@@ -2396,5 +2409,12 @@ updateFullscreenButton();
         ws.send(JSON.stringify({ buy: 1, price: stake, parameters: params }));
     };
     settleDemoTrade = function () {};
-    boot();
+    if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'DP_REQ_AUTH' }, '*');
+        setTimeout(() => {
+            if (!auth) boot();
+        }, 600);
+    } else {
+        boot();
+    }
 })();
