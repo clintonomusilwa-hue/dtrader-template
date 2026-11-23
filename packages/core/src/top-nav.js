@@ -1,6 +1,6 @@
 const style = document.createElement('style');
 style.textContent =
-    '@keyframes dpFadeSlide{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes dpPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}.dp-tab-btn{transition:all .2s ease;display:inline-flex;align-items:center;gap:6px}.dp-tab-btn:hover{background:#1e293b!important;color:#fff!important;transform:translateY(-1px)}.dp-tab-btn.active svg{animation:dpPulse 1.8s infinite ease-in-out}.dp-panel-anim{animation:dpFadeSlide .25s ease-out}';
+    '@keyframes dpFadeSlide{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes dpPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}.dp-tab-btn{transition:all .2s ease;display:inline-flex;align-items:center;gap:6px}.dp-tab-btn:hover{background:#1e293b!important;border-color:#60a5fa!important;color:#fff!important;transform:translateY(-1px)}.dp-tab-btn.active svg{animation:dpPulse 1.8s infinite ease-in-out}.dp-panel-anim{animation:dpFadeSlide .25s ease-out}';
 document.head.appendChild(style);
 const nav = document.createElement('div');
 nav.id = 'dp-topnav';
@@ -8,9 +8,9 @@ document.body.prepend(nav);
 const panel = document.createElement('div');
 panel.id = 'dp-tab-panel';
 panel.style.cssText =
-    'display:none;position:fixed;top:42px;left:0;right:0;bottom:0;background:#0b1120;color:#fff;z-index:99998;overflow:auto;padding:24px;font-family:sans-serif;';
+    'display:none;position:fixed;top:44px;left:0;right:0;bottom:0;background:#0b1120;color:#fff;z-index:99998;overflow:auto;padding:24px;font-family:sans-serif;';
 document.body.appendChild(panel);
-document.body.style.paddingTop = '42px';
+document.body.style.paddingTop = '44px';
 let tab = 'Manual Trader';
 const tabs = [
     { n: 'Manual Trader', i: 'M3 17l6-6 4 4 8-8M17 7h4v4' },
@@ -31,15 +31,15 @@ const tabs = [
     { n: 'Useful Docs', i: 'M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm0 0v6h6M8 13h8M8 17h5' },
 ];
 function drawNav() {
-    nav.innerHTML = `<div style="position:fixed;top:0;left:0;right:0;height:42px;background:#0f172a;border-bottom:1px solid #1e293b;display:flex;align-items:center;gap:6px;padding:0 12px;z-index:99999;overflow-x:auto;">${tabs
+    nav.innerHTML = `<div style="position:fixed;top:0;left:0;right:0;height:44px;background:#0f172a;border-bottom:1px solid #334155;display:flex;align-items:center;gap:8px;padding:0 12px;z-index:99999;overflow-x:auto;">${tabs
         .map(
             t =>
                 `<button class="dp-tab-btn${tab === t.n ? ' active' : ''}" data-t="${t.n}" style="background:${
-                    tab === t.n ? '#2563eb' : 'transparent'
-                };color:${
-                    tab === t.n ? '#fff' : '#94a3b8'
-                };border:none;border-radius:6px;padding:6px 12px;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap;box-shadow:${
-                    tab === t.n ? '0 2px 10px rgba(37,99,235,.4)' : 'none'
+                    tab === t.n ? '#2563eb' : '#131c31'
+                };color:${tab === t.n ? '#fff' : '#cbd5e1'};border:1px solid ${
+                    tab === t.n ? '#60a5fa' : '#334155'
+                };border-radius:6px;padding:5px 12px;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap;box-shadow:${
+                    tab === t.n ? '0 2px 10px rgba(37,99,235,.4)' : 'inset 0 1px 0 rgba(255,255,255,.04)'
                 };"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="${
                     t.i
                 }"/></svg><span>${t.n}</span></button>`
