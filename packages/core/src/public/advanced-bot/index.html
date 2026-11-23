@@ -1,58 +1,972 @@
-<!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Advanced Bot — Trading Dashboard</title><script>function updatePhoneScale(){document.documentElement.style.setProperty('--phone-scale',window.innerWidth<=1000?String(window.innerWidth/1360):'1')}updatePhoneScale();window.addEventListener('resize',updatePhoneScale);window.addEventListener('orientationchange',updatePhoneScale);</script><link rel="stylesheet" href="style.css?v=30"></head>
-<body>
-<header class="topbar"><img src="logo.png" class="logo" alt=""><div class="execution-control"><span class="execution-label">EXECUTION</span><div class="execution-options" role="group" aria-label="Execution speed"><button class="selected" data-speed="STANDARD" aria-pressed="true">STANDARD</button><button data-speed="FAST" aria-pressed="false">⚡ FAST</button><button data-speed="ULTRA" aria-pressed="false">⚡⚡ ULTRA</button></div></div><button type="button" id="phonePreviewBtn" class="phone-preview-btn" aria-haspopup="dialog">▣ &nbsp;Phone preview</button><div class="account"><span class="coin">₿</span><span><span id="demoBalance">10,323.28</span> USD <small class="demo-account-label">SIMULATED</small></span></div></header>
-<div class="nav"><button class="nav-active">◉ <span>Advanced Bot</span></button><div class="run-wrap"><button id="runBtn" class="run">▶ &nbsp;Run</button><div class="run-status"><b id="runStatus">Bot is not running</b><div class="progress"><i></i></div></div></div></div>
-<div class="workspace">
-  <div class="workleft">
-    <div class="horizontal-line"><span></span></div>
-    <div class="columns">
-      <main class="market-scroll scroll" id="marketScroll">
-        <section class="top-controls card"><div class="focus-toggle"><button class="on" data-focus="Focus"><b>Focus</b><small>one market, every reading</small></button><button data-focus="Pulse"><b>Pulse</b><small>all markets, best picks</small></button></div><button type="button" class="info info-trigger" data-help="focus" aria-label="About Focus and Pulse" aria-expanded="false">ⓘ</button><span class="window-label">Ticks</span><button type="button" class="info info-trigger" data-help="ticks" aria-label="About Ticks" aria-expanded="false">ⓘ</button><div class="window-buttons" id="windowButtons"><button>50</button><button>120</button><button>250</button><button>500</button><button class="active">1000</button></div><input id="windowInput" type="number" value="1000" min="10" max="5000"><span class="muted">ticks</span><span class="live"><i></i> simulated ticks</span></section>
-        <section class="market-picker card"><div class="market-group"><label>VOLATILITY</label><div class="pills" id="volMarkets"><button>V10</button><button>V25</button><button>V50</button><button class="active">V75</button><button>V100</button></div></div><div class="market-group"><label>1-SECOND</label><div class="pills" id="secondMarkets"><button>V10s</button><button>V25s</button><button>V50s</button><button>V75s</button><button>V100s</button></div></div><div class="market-row"><div class="market-group"><label>JUMP</label><div class="pills" id="jumpMarkets"><button>J10</button><button>J25</button><button>J50</button><button>J75</button><button>J100</button></div></div><div class="market-group"><label>TREND</label><div class="pills" id="trendMarkets"><button>Bull</button><button>Bear</button></div></div></div></section>
-        <div class="market-title"><div><strong id="marketTitle">Volatility 75</strong> <span class="green-dot"></span><div class="muted small"><span id="tickCount">1000</span> ticks in view &nbsp; <button type="button" class="info info-trigger" data-help="tick-view" aria-label="About ticks in view" aria-expanded="false">ⓘ</button></div></div><div class="quote"><b id="quote">43579.6107</b><span class="last-digit" id="lastDigit">7</span></div></div>
-        <div class="ticks card" id="ticks"></div>
-        <section class="card patterns"><div class="section-head"><b>Patterns <button type="button" class="info info-trigger" data-help="patterns" aria-label="About Patterns" aria-expanded="false">ⓘ</button></b><span class="tiny muted"><span id="patternWindow">1000</span> ticks · <span id="neutralSummary"><span id="barrierCount">105</span> digits on the barrier (N)</span></span></div><div class="segmented" id="patternTabs"><button>Even / Odd</button><button>Rise / Fall</button><button class="active">Over / Under</button></div><div class="barrier-row"><span>Barrier</span><div class="barriers" id="barriers"></div></div><p class="tiny muted" id="patternLegend">O = last digit above 2, U = below 2</p><div class="split-label"><b><span class="square blue"></span> <span id="overLabel">Over 80.2%</span></b><b><span id="underLabel">19.8% Under</span> <span class="square orange"></span></b></div><div class="split-bar"><span id="overBar"></span><i id="underBar"></i></div>
-          <div class="run-cards"><div><small>NOW</small><b id="nowRun">—</b></div><div class="blue-border"><small id="runLabelA">OVER RUNS</small><span id="overRuns">longest 17<br>average 3.5<br><span class="muted">204 runs</span></span></div><div class="orange-border"><small id="runLabelB">UNDER RUNS</small><span id="underRuns">longest 4<br>average 1.2<br><span class="muted">148 runs</span></span></div></div>
-          <div class="history-grid" id="historyGrid"></div><div class="history-legend"><span><em class="block-o" id="legendA">O</em> <span id="legendLabelA">Over</span></span><span><em class="block-u" id="legendB">U</em> <span id="legendLabelB">Under</span></span><span id="neutralLegend"><em class="block-n">N</em> on the barrier</span><span class="muted">last 100 of <span id="historyTotal">1000</span>, newest last (outlined)</span></div>
-          <div class="sequence-layout"><div><div class="seq-header"><span class="muted">Common sequences</span><div id="sequenceLengths"><button>2</button><button>3</button><button>4</button><button class="active">5</button></div></div><div id="sequenceList"></div><div class="least-title">LEAST COMMON</div><div id="leastList"></div></div><div class="what-next"><div>What came next</div><p id="nextText">The latest digit is on the barrier.</p><small>Each time the market showed the same latest ticks earlier in view, and what the next one was. A history, not a promise.</small></div></div>
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Advanced Bot — Trading Dashboard</title>
+        <script>
+            function updatePhoneScale() {
+                document.documentElement.style.setProperty(
+                    '--phone-scale',
+                    window.innerWidth <= 1000 ? String(window.innerWidth / 1360) : '1'
+                );
+            }
+            updatePhoneScale();
+            window.addEventListener('resize', updatePhoneScale);
+            window.addEventListener('orientationchange', updatePhoneScale);
+        </script>
+        <link rel="stylesheet" href="style.css?v=30" />
+    </head>
+
+    <body>
+        <header class="topbar">
+            <img src="logo.png" class="logo" alt="" />
+            <div class="execution-control">
+                <span class="execution-label">EXECUTION</span>
+                <div class="execution-options" role="group" aria-label="Execution speed">
+                    <button class="selected" data-speed="STANDARD" aria-pressed="true">STANDARD</button
+                    ><button data-speed="FAST" aria-pressed="false">⚡ FAST</button
+                    ><button data-speed="ULTRA" aria-pressed="false">⚡⚡ ULTRA</button>
+                </div>
+            </div>
+            <button type="button" id="phonePreviewBtn" class="phone-preview-btn" aria-haspopup="dialog">
+                ▣ &nbsp;Phone preview
+            </button>
+            <div class="account">
+                <span class="coin">₿</span
+                ><span
+                    ><span id="demoBalance">10,323.28</span> USD
+                    <small class="demo-account-label">SIMULATED</small></span
+                >
+            </div>
+        </header>
+        <div class="nav">
+            <button class="nav-active">◉ <span>Advanced Bot</span></button>
+            <div class="run-wrap">
+                <button id="runBtn" class="run">▶ &nbsp;Run</button>
+                <div class="run-status">
+                    <b id="runStatus">Bot is not running</b>
+                    <div class="progress"><i></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="workspace">
+            <div class="workleft">
+                <div class="horizontal-line"><span></span></div>
+                <div class="columns">
+                    <main class="market-scroll scroll" id="marketScroll">
+                        <section class="top-controls card">
+                            <div class="focus-toggle">
+                                <button class="on" data-focus="Focus">
+                                    <b>Focus</b><small>one market, every reading</small></button
+                                ><button data-focus="Pulse"><b>Pulse</b><small>all markets, best picks</small></button>
+                            </div>
+                            <button
+                                type="button"
+                                class="info info-trigger"
+                                data-help="focus"
+                                aria-label="About Focus and Pulse"
+                                aria-expanded="false"
+                            >
+                                ⓘ</button
+                            ><span class="window-label">Ticks</span
+                            ><button
+                                type="button"
+                                class="info info-trigger"
+                                data-help="ticks"
+                                aria-label="About Ticks"
+                                aria-expanded="false"
+                            >
+                                ⓘ
+                            </button>
+                            <div class="window-buttons" id="windowButtons">
+                                <button>50</button><button>120</button><button>250</button><button>500</button
+                                ><button class="active">1000</button>
+                            </div>
+                            <input id="windowInput" type="number" value="1000" min="10" max="5000" /><span class="muted"
+                                >ticks</span
+                            ><span class="live"><i></i> simulated ticks</span>
+                        </section>
+                        <section class="market-picker card">
+                            <div class="market-group">
+                                <label>VOLATILITY</label>
+                                <div class="pills" id="volMarkets">
+                                    <button>V10</button><button>V25</button><button>V50</button
+                                    ><button class="active">V75</button><button>V100</button>
+                                </div>
+                            </div>
+                            <div class="market-group">
+                                <label>1-SECOND</label>
+                                <div class="pills" id="secondMarkets">
+                                    <button>V10s</button><button>V25s</button><button>V50s</button><button>V75s</button
+                                    ><button>V100s</button>
+                                </div>
+                            </div>
+                            <div class="market-row">
+                                <div class="market-group">
+                                    <label>JUMP</label>
+                                    <div class="pills" id="jumpMarkets">
+                                        <button>J10</button><button>J25</button><button>J50</button><button>J75</button
+                                        ><button>J100</button>
+                                    </div>
+                                </div>
+                                <div class="market-group">
+                                    <label>TREND</label>
+                                    <div class="pills" id="trendMarkets">
+                                        <button>Bull</button><button>Bear</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                        <div class="market-title">
+                            <div>
+                                <strong id="marketTitle">Volatility 75</strong> <span class="green-dot"></span>
+                                <div class="muted small">
+                                    <span id="tickCount">1000</span> ticks in view &nbsp;
+                                    <button
+                                        type="button"
+                                        class="info info-trigger"
+                                        data-help="tick-view"
+                                        aria-label="About ticks in view"
+                                        aria-expanded="false"
+                                    >
+                                        ⓘ
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="quote">
+                                <b id="quote">43579.6107</b><span class="last-digit" id="lastDigit">7</span>
+                            </div>
+                        </div>
+                        <div class="ticks card" id="ticks"></div>
+                        <section class="card patterns">
+                            <div class="section-head">
+                                <b
+                                    >Patterns
+                                    <button
+                                        type="button"
+                                        class="info info-trigger"
+                                        data-help="patterns"
+                                        aria-label="About Patterns"
+                                        aria-expanded="false"
+                                    >
+                                        ⓘ
+                                    </button></b
+                                ><span class="tiny muted"
+                                    ><span id="patternWindow">1000</span> ticks ·
+                                    <span id="neutralSummary"
+                                        ><span id="barrierCount">105</span> digits on the barrier (N)</span
+                                    ></span
+                                >
+                            </div>
+                            <div class="segmented" id="patternTabs">
+                                <button>Even / Odd</button><button>Rise / Fall</button
+                                ><button class="active">Over / Under</button>
+                            </div>
+                            <div class="barrier-row">
+                                <span>Barrier</span>
+                                <div class="barriers" id="barriers"></div>
+                            </div>
+                            <p class="tiny muted" id="patternLegend">O = last digit above 2, U = below 2</p>
+                            <div class="split-label">
+                                <b><span class="square blue"></span> <span id="overLabel">Over 80.2%</span></b
+                                ><b><span id="underLabel">19.8% Under</span> <span class="square orange"></span></b>
+                            </div>
+                            <div class="split-bar"><span id="overBar"></span><i id="underBar"></i></div>
+                            <div class="run-cards">
+                                <div><small>NOW</small><b id="nowRun">—</b></div>
+                                <div class="blue-border">
+                                    <small id="runLabelA">OVER RUNS</small
+                                    ><span id="overRuns"
+                                        >longest 17<br />average 3.5<br /><span class="muted">204 runs</span></span
+                                    >
+                                </div>
+                                <div class="orange-border">
+                                    <small id="runLabelB">UNDER RUNS</small
+                                    ><span id="underRuns"
+                                        >longest 4<br />average 1.2<br /><span class="muted">148 runs</span></span
+                                    >
+                                </div>
+                            </div>
+                            <div class="history-grid" id="historyGrid"></div>
+                            <div class="history-legend">
+                                <span><em class="block-o" id="legendA">O</em> <span id="legendLabelA">Over</span></span
+                                ><span
+                                    ><em class="block-u" id="legendB">U</em> <span id="legendLabelB">Under</span></span
+                                ><span id="neutralLegend"><em class="block-n">N</em> on the barrier</span
+                                ><span class="muted"
+                                    >last 100 of <span id="historyTotal">1000</span>, newest last (outlined)</span
+                                >
+                            </div>
+                            <div class="sequence-layout">
+                                <div>
+                                    <div class="seq-header">
+                                        <span class="muted">Common sequences</span>
+                                        <div id="sequenceLengths">
+                                            <button>2</button><button>3</button><button>4</button
+                                            ><button class="active">5</button>
+                                        </div>
+                                    </div>
+                                    <div id="sequenceList"></div>
+                                    <div class="least-title">LEAST COMMON</div>
+                                    <div id="leastList"></div>
+                                </div>
+                                <div class="what-next">
+                                    <div>What came next</div>
+                                    <p id="nextText">The latest digit is on the barrier.</p>
+                                    <small
+                                        >Each time the market showed the same latest ticks earlier in view, and what the
+                                        next one was. A history, not a promise.</small
+                                    >
+                                </div>
+                            </div>
+                        </section>
+                        <div class="stats-row">
+                            <section class="card stats">
+                                <b
+                                    >Parity
+                                    <button
+                                        type="button"
+                                        class="info info-trigger"
+                                        data-help="parity"
+                                        aria-label="About Parity"
+                                        aria-expanded="false"
+                                    >
+                                        ⓘ
+                                    </button></b
+                                >
+                                <div class="split-label">
+                                    <b><span class="square blue"></span> Even <span id="evenPercent">50.3%</span></b
+                                    ><b><span id="oddPercent">49.7%</span> Odd <span class="square orange"></span></b>
+                                </div>
+                                <div class="split-bar">
+                                    <span id="evenBar" style="width: 50%"></span><i id="oddBar" style="width: 50%"></i>
+                                </div>
+                                <div class="two-stat">
+                                    <div><small>Current run</small><b id="parityRun">1× even</b></div>
+                                    <div>
+                                        <small>Next-parity forecast</small><b>Even <span class="mini-blue"></span></b
+                                        ><small>50% · acc 47%</small>
+                                    </div>
+                                </div>
+                                <p class="muted small">Common runs &nbsp; <span id="parityCommon"></span></p>
+                            </section>
+                            <section class="card stats">
+                                <b
+                                    >Direction
+                                    <button
+                                        type="button"
+                                        class="info info-trigger"
+                                        data-help="direction"
+                                        aria-label="About Direction"
+                                        aria-expanded="false"
+                                    >
+                                        ⓘ
+                                    </button></b
+                                >
+                                <div class="split-label">
+                                    <b><span class="square blue"></span> Rise <span id="risePercent">47.0%</span></b
+                                    ><b><span id="fallPercent">53.0%</span> Fall <span class="square orange"></span></b>
+                                </div>
+                                <div class="split-bar">
+                                    <span id="riseBar" style="width: 47%"></span><i id="fallBar" style="width: 53%"></i>
+                                </div>
+                                <div class="two-stat">
+                                    <div><small>Current run</small><b id="directionRun">1× fall</b></div>
+                                    <div><small>Flat ticks</small><b id="flatCount">0</b></div>
+                                </div>
+                                <p class="muted small">Common moves &nbsp; <span id="directionCommon"></span></p>
+                            </section>
+                        </div>
+                        <section class="card chart-card">
+                            <div class="section-head">
+                                <b
+                                    >Digits
+                                    <button
+                                        type="button"
+                                        class="info info-trigger"
+                                        data-help="digits"
+                                        aria-label="About Digits"
+                                        aria-expanded="false"
+                                    >
+                                        ⓘ
+                                    </button></b
+                                ><span class="tiny muted" id="digitSummary">most 3 · least 8 · alternation 64.2%</span>
+                            </div>
+                            <div class="digit-chart" id="digitChart"></div>
+                            <div class="chart-legend">
+                                <span><i class="square red"></i> most frequent</span
+                                ><span><i class="square blue"></i> least frequent</span
+                                ><span><i class="outline-square"></i> latest</span>
+                            </div>
+                            <div class="muted small">
+                                Common pairs &nbsp; <span class="tag">99 ×18</span> <span class="tag">09 ×17</span>
+                                <span class="tag">94 ×16</span>
+                            </div>
+                        </section>
+                        <section class="card chart-card">
+                            <div class="section-head">
+                                <b
+                                    >Over / under by barrier
+                                    <button
+                                        type="button"
+                                        class="info info-trigger"
+                                        data-help="barriers"
+                                        aria-label="About Over and under by barrier"
+                                        aria-expanded="false"
+                                    >
+                                        ⓘ
+                                    </button></b
+                                >
+                            </div>
+                            <div class="chart-legend">
+                                <span><i class="square blue"></i> over</span
+                                ><span><i class="square dark-blue"></i> under</span
+                                ><span>your barrier is highlighted</span>
+                            </div>
+                            <div class="barrier-chart" id="barrierChart"></div>
+                        </section>
+                    </main>
+                    <div class="settings-scroll scroll" id="settingsScroll">
+                        <div class="idle card">
+                            <span class="gray-dot"></span>
+                            <div>
+                                <b id="idleTitle">Idle</b
+                                ><small id="idleDescription"
+                                    >Under 2 · 1t · V75 · every cycle · martingale ×2.2 from 200.00</small
+                                >
+                            </div>
+                        </div>
+                        <div class="next-stake">Next stake <b id="nextStake">200.00 USD</b></div>
+                        <section class="card setting-card">
+                            <div class="setting-title">
+                                <b
+                                    >Play
+                                    <button
+                                        type="button"
+                                        class="info info-trigger"
+                                        data-help="play"
+                                        aria-label="About Play"
+                                        aria-expanded="false"
+                                    >
+                                        ⓘ
+                                    </button></b
+                                ><span class="muted small" id="playSummary">Under 2 · 1t</span
+                                ><button class="collapse">⌃</button>
+                            </div>
+                            <div class="setting-body">
+                                <div class="pills trade-pills" id="tradeTypes">
+                                    <button>Even</button><button>Odd</button><button>Rise</button><button>Fall</button
+                                    ><button>Over</button><button class="active">Under</button><button>Differs</button
+                                    ><button>Matches</button>
+                                </div>
+                                <div class="field-row" id="playFields">
+                                    <label
+                                        >Duration<input id="duration" type="number" value="1" min="1" /><small
+                                            >ticks per contract</small
+                                        ></label
+                                    ><label id="playBarrierField"
+                                        >Barrier<input
+                                            id="barrierInput"
+                                            type="number"
+                                            value="2"
+                                            min="0"
+                                            max="9"
+                                        /><small id="barrierHelp">wins when the last digit is below it</small></label
+                                    >
+                                </div>
+                                <div class="field-row" id="digitControls" hidden>
+                                    <label
+                                        >Digit<select id="digitMode">
+                                            <option value="random">Random</option>
+                                            <option value="fixed" selected>Fixed</option>
+                                            <option value="least">Least appearing</option>
+                                            <option value="most">Most appearing</option>
+                                            <option value="second">Second most appearing</option></select
+                                        ><small id="digitModeHelp">Select a digit manually</small></label
+                                    ><label
+                                        >Which<input
+                                            id="whichDigit"
+                                            type="number"
+                                            value="2"
+                                            min="0"
+                                            max="9"
+                                            step="1"
+                                            inputmode="numeric"
+                                        /><small>Enter 0–9 for a fixed digit</small></label
+                                    >
+                                </div>
+                                <div class="switch-row">
+                                    <button class="switch" id="alternate"><i></i></button>
+                                    <div>
+                                        <b>Alternate with Over</b
+                                        ><small id="alternateText">Off — Under every trade</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                        <section class="card setting-card">
+                            <div class="setting-title">
+                                <b
+                                    >Entry gate
+                                    <button
+                                        type="button"
+                                        class="info info-trigger"
+                                        data-help="entry"
+                                        aria-label="About Entry gate"
+                                        aria-expanded="false"
+                                    >
+                                        ⓘ
+                                    </button></b
+                                ><span class="muted small" id="gateSummary">bias ≥ 55%</span
+                                ><button class="collapse">⌃</button>
+                            </div>
+                            <div class="setting-body">
+                                <label class="field-label"
+                                    >Place a trade<select id="gate">
+                                        <option value="bias">Bias %</option>
+                                        <option value="pattern">Pattern</option>
+                                        <option value="common">Common sequence</option>
+                                    </select></label
+                                >
+                                <div id="gateExtras">
+                                    <label class="field-label" id="gateInputLabel"
+                                        >Minimum bias %<input
+                                            id="gatePattern"
+                                            type="number"
+                                            min="0"
+                                            max="100"
+                                            step="0.1"
+                                            value="55" /></label
+                                    ><small class="help" id="gateHelp"
+                                        >Trade when the selected outcome’s observed frequency meets this threshold.
+                                        Historical frequency is not a prediction.</small
+                                    >
+                                    <div class="common-label" hidden>
+                                        Common on <span class="market-short">V75</span> now: &nbsp;
+                                        <button class="tag gate-tag">OOO ×335</button>
+                                        <button class="tag gate-tag">OUO ×103</button>
+                                        <button class="tag gate-tag">OOOO ×232</button>
+                                        <button class="tag gate-tag">OOUO ×74</button>
+                                    </div>
+                                    <label class="field-label after-gate"
+                                        >After a gated trade<select id="afterGate">
+                                            <option>Whenever it holds</option>
+                                            <option>Each new occurrence</option>
+                                            <option>Ignore while recovering</option>
+                                            <option>Once, then free-run</option>
+                                        </select></label
+                                    >
+                                    <div class="gate-state" id="gateState">
+                                        <span class="amber-dot"></span> Holding &nbsp;UO ≠ OO
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                        <section class="card setting-card">
+                            <div class="setting-title">
+                                <b
+                                    >Stake
+                                    <button
+                                        type="button"
+                                        class="info info-trigger"
+                                        data-help="stake"
+                                        aria-label="About Stake"
+                                        aria-expanded="false"
+                                    >
+                                        ⓘ
+                                    </button></b
+                                ><span class="muted small" id="stakeSummary">200.00 → 2129.60 after 3 losses</span
+                                ><button class="collapse">⌃</button>
+                            </div>
+                            <div class="setting-body">
+                                <div class="segmented stake-tabs" id="stakeTabs">
+                                    <button>Flat</button><button class="active">Martingale</button
+                                    ><button>Stakelist</button><button>Auto-stake</button>
+                                </div>
+                                <div class="field-row" id="stakeFields">
+                                    <label id="baseStakeField"
+                                        >Stake<input
+                                            id="stake"
+                                            type="number"
+                                            value="200"
+                                            min="0.35"
+                                            step="0.01" /></label
+                                    ><label id="multiplierField"
+                                        >Multiplier<input
+                                            id="multiplier"
+                                            type="number"
+                                            value="2.2"
+                                            min="1"
+                                            step="0.1"
+                                        /><small>applied after every loss</small></label
+                                    >
+                                </div>
+                                <label class="field-label max-steps" id="maxStepsField"
+                                    >Max steps<input id="maxSteps" type="number" value="5" min="0" /><small
+                                        >Maximum increases after losses; then return to the base stake.</small
+                                    ></label
+                                ><label class="field-label" id="stakeListField" hidden
+                                    >Stake list<input id="stakeList" value="1, 2, 4, 8" /><small
+                                        >Separate stakes with commas. Advance on loss; reset on a win or after the last
+                                        step.</small
+                                    ></label
+                                ><label class="field-label auto-stake-field" id="autoStakeField" hidden
+                                    >Balance percentage<input
+                                        id="autoStakePercent"
+                                        type="number"
+                                        value="2"
+                                        min="0.01"
+                                        max="100"
+                                        step="0.01"
+                                    /><small>Percentage of the available simulated balance per trade.</small></label
+                                >
+                                <div class="stake-warning" id="stakeWarning" hidden></div>
+                            </div>
+                        </section>
+                        <section class="card setting-card">
+                            <div class="setting-title">
+                                <b
+                                    >Stop when
+                                    <button
+                                        type="button"
+                                        class="info info-trigger"
+                                        data-help="stop"
+                                        aria-label="About Stop conditions"
+                                        aria-expanded="false"
+                                    >
+                                        ⓘ
+                                    </button></b
+                                ><span class="muted small" id="stopSummary">TP 1 · SL 5000</span
+                                ><button class="collapse">⌃</button>
+                            </div>
+                            <div class="setting-body">
+                                <div class="field-row">
+                                    <label
+                                        >Profit reaches<input id="takeProfit" type="number" value="1" min="0" /><small
+                                            >0 = no limit</small
+                                        ></label
+                                    ><label
+                                        >Loss reaches<input id="stopLoss" type="number" value="5000" min="0" /><small
+                                            >0 = no limit</small
+                                        ></label
+                                    >
+                                </div>
+                                <div class="field-row">
+                                    <label
+                                        >Trades placed<input
+                                            id="tradeLimit"
+                                            type="number"
+                                            value="0"
+                                            min="0"
+                                            step="1"
+                                        /><small>0 = no limit; the final trade settles</small></label
+                                    ><label
+                                        >Losses in a row<input
+                                            id="lossLimit"
+                                            type="number"
+                                            value="0"
+                                            min="0"
+                                            step="1"
+                                        /><small>0 = no limit</small></label
+                                    >
+                                </div>
+                            </div>
+                        </section>
+                        <div class="session-heading">
+                            <b
+                                >Session
+                                <button
+                                    type="button"
+                                    class="info info-trigger"
+                                    data-help="session"
+                                    aria-label="About Session"
+                                    aria-expanded="false"
+                                >
+                                    ⓘ
+                                </button></b
+                            >
+                        </div>
+                        <div class="session-cards">
+                            <div>
+                                <small>Session P&amp;L</small><b id="sessionPL">0.00<br />USD</b>
+                            </div>
+                            <div><small>Won / lost</small><b id="sessionWL">0 / 0</b></div>
+                            <div><small>Hit rate</small><b id="hitRate">—</b></div>
+                            <div><small>Loss streak</small><b id="lossStreak">0</b></div>
+                        </div>
+                        <div class="session-empty" id="sessionEmpty">
+                            <b>No trades yet</b><span>Every contract this session lands here with its result.</span>
+                        </div>
+                        <div id="sessionTrades"></div>
+                    </div>
+                </div>
+            </div>
+            <aside class="right-scroll scroll" id="activityPanel">
+                <div class="right-tabs" id="rightTabs">
+                    <button class="active">Summary</button><button>Transactions</button><button>Journal</button>
+                </div>
+                <div id="summaryView" class="summary-view">
+                    <div class="summary-heading">
+                        <span class="summary-status-dot" id="summaryDot"></span>
+                        <div>
+                            <b id="summaryTitle">Bot is not running</b
+                            ><small id="summarySubtitle">Choose your settings, then press Run.</small>
+                        </div>
+                    </div>
+                    <div class="summary-detail-card">
+                        <span class="summary-eyebrow">CURRENT ACTIVITY</span>
+                        <p id="summaryActivity">Waiting to start.</p>
+                        <div class="summary-detail-row"><span>Market</span><b id="summaryMarket">Volatility 75</b></div>
+                        <div class="summary-detail-row">
+                            <span>Contract</span><b id="summaryContract">Under 2 · 1 tick</b>
+                        </div>
+                        <div class="summary-detail-row"><span>Entry gate</span><b id="summaryGate">Bias %</b></div>
+                        <div class="summary-detail-row">
+                            <span>After a gated trade</span><b id="summaryBehavior">Whenever it holds</b>
+                        </div>
+                        <div class="summary-detail-row"><span>Next stake</span><b id="summaryStake">200.00 USD</b></div>
+                    </div>
+                    <div class="summary-scanner" id="summaryScanner">AI scanner: off</div>
+                    <div class="summary-demo-note">Simulation only · No real orders are placed</div>
+                </div>
+                <div id="transactionView" hidden>
+                    <div class="right-actions">
+                        <button disabled>Download</button><button disabled>View Detail</button>
+                    </div>
+                    <div class="transaction-head"><b>Type</b><b>Entry/Exit spot</b><b>Buy price and P/L</b></div>
+                    <div class="empty-state" id="emptyState">
+                        <div class="box-icon">⬡</div>
+                        <b id="emptyTitle">There are no transactions to display</b>
+                        <p>Here are the possible reasons:</p>
+                        <ul>
+                            <li id="emptyReason">The bot is not running</li>
+                            <li>The stats are cleared</li>
+                        </ul>
+                    </div>
+                    <div id="transactionList"></div>
+                </div>
+                <div id="journalView" class="right-journal" hidden>
+                    <div class="journal-title"><b>Session journal</b><small>Simulation events</small></div>
+                    <div id="rightJournalEntries">
+                        <div class="ai-log-empty">No journal entries yet.</div>
+                    </div>
+                </div>
+                <div class="right-bottom">
+                    <div class="totals">
+                        <div><b>Total stake</b><span id="totalStake">0.00 USD</span></div>
+                        <div><b>Total payout</b><span id="totalPayout">0.00 USD</span></div>
+                        <div><b>No. of runs</b><span id="totalRuns">0</span></div>
+                        <div><b>Contracts lost</b><span id="totalLost">0</span></div>
+                        <div><b>Contracts won</b><span id="totalWon">0</span></div>
+                        <div><b>Total profit/loss</b><span id="totalPL">0.00 USD</span></div>
+                    </div>
+                    <button id="resetBtn" class="reset">Reset</button>
+                </div>
+            </aside>
+        </div>
+        <footer>
+            <span class="footer-date" id="clock" title="Current date and time in GMT">2026-11-23 09:18:37 GMT</span
+            ><button
+                id="themeToggle"
+                class="theme-toggle"
+                type="button"
+                aria-label="Switch to light theme"
+                title="Switch to light theme"
+            >
+                ☾</button
+            ><button
+                id="fullscreenToggle"
+                class="fullscreen-toggle"
+                type="button"
+                aria-label="Enter full screen"
+                aria-pressed="false"
+                title="Enter full screen"
+            >
+                ⛶
+            </button>
+        </footer>
+        <button
+            id="aiBtn"
+            class="floating-ai"
+            type="button"
+            aria-label="Open AI digit analyser. Drag to move."
+            aria-expanded="false"
+            title="Open digit analyser — drag to move"
+        >
+            <img class="scanner-logo" src="scanner-logo.png" alt="" /><span
+                class="ai-status-dot"
+                aria-hidden="true"
+            ></span>
+        </button>
+        <section id="aiPanel" class="ai-panel" aria-label="AI digit analyser" hidden>
+            <div class="ai-panel-header">
+                <div class="ai-heading-icon">✦</div>
+                <div>
+                    <div class="ai-eyebrow">INTELLIGENT TRADING ASSISTANT</div>
+                    <h2>Digit Analyser</h2>
+                </div>
+                <button class="ai-close" id="aiClose" aria-label="Close analyser">×</button>
+            </div>
+            <div class="ai-panel-content">
+                <div class="ai-notice">
+                    <span class="notice-dot"></span
+                    ><span><b>SIMULATED DEMO</b> · No Deriv connection or real orders</span>
+                </div>
+                <p class="ai-description">
+                    Scan recent tick frequencies across markets and load a preferred signal. Past frequency is not a
+                    prediction of the next tick.
+                </p>
+                <div class="scanner-heading">
+                    <div><b>Intelligent Scanner</b><small id="scannerStatus">Ready to scan</small></div>
+                    <span class="scan-pulse" id="scannerPulse"></span>
+                </div>
+                <details class="scanner-filter" open>
+                    <summary>
+                        <b>Contracts to scan</b><small id="scanTypeCount">6 selected</small><span>⌄</span>
+                    </summary>
+                    <div class="scanner-filter-body">
+                        <div class="scan-type-grid" id="scanTypeOptions">
+                            <label><input type="checkbox" value="Even" checked /> Even</label
+                            ><label><input type="checkbox" value="Odd" checked /> Odd</label
+                            ><label><input type="checkbox" value="Over" checked /> Over</label
+                            ><label><input type="checkbox" value="Under" checked /> Under</label
+                            ><label><input type="checkbox" value="Matches" checked /> Matches</label
+                            ><label><input type="checkbox" value="Differs" checked /> Differs</label>
+                        </div>
+                        <div class="scan-target-grid">
+                            <label id="scanOverField"
+                                >Over barriers<input
+                                    id="scanOver"
+                                    type="text"
+                                    placeholder="All: 0–8"
+                                    aria-label="Over barriers"
+                                /><small>e.g. 2 or 2, 3</small></label
+                            ><label id="scanUnderField"
+                                >Under barriers<input
+                                    id="scanUnder"
+                                    type="text"
+                                    placeholder="All: 1–9"
+                                    aria-label="Under barriers"
+                                /><small>e.g. 2 or 2, 3</small></label
+                            ><label id="scanMatchesField"
+                                >Matches digits<input
+                                    id="scanMatches"
+                                    type="text"
+                                    placeholder="All: 0–9"
+                                    aria-label="Matches digits"
+                                /><small>e.g. 1 or 1, 5</small></label
+                            ><label id="scanDiffersField"
+                                >Differs digits<input
+                                    id="scanDiffers"
+                                    type="text"
+                                    placeholder="All: 0–9"
+                                    aria-label="Differs digits"
+                                /><small>e.g. 1 or 1, 5</small></label
+                            >
+                        </div>
+                        <small class="scan-filter-help"
+                            >Leave a field empty to scan all valid digits. Separate choices with commas. Changes pause
+                            new AI entries until rescanning; an open demo trade can still settle.</small
+                        >
+                    </div>
+                </details>
+                <details class="scanner-filter">
+                    <summary>
+                        <b>Markets to scan</b><small id="scanMarketCount">17 selected</small><span>⌄</span>
+                    </summary>
+                    <div class="scanner-filter-body">
+                        <div class="scan-market-actions">
+                            <button id="scanSelectAll" type="button">Select all</button
+                            ><button id="scanClearAll" type="button">Clear</button>
+                        </div>
+                        <div id="scanMarketOptions" class="scan-market-grid"></div>
+                    </div>
+                </details>
+                <div class="scanner-actions">
+                    <button id="scanBtn" class="scanner-primary">✦ &nbsp;Intelligent Scanner</button
+                    ><button id="loadSignalBtn" class="scanner-secondary" disabled>Load Preferred Signal</button>
+                </div>
+                <div class="signal-box" id="signalBox">
+                    <div class="signal-placeholder">Run the scanner to compare simulated market signals.</div>
+                </div>
+                <p class="risk-note">
+                    Historical hit rates only; no live quotes or payouts are available. A high hit rate does not imply
+                    profit. Martingale can rapidly increase losses; stop limits can be exceeded.
+                </p>
+                <details class="ai-execution-settings">
+                    <summary class="ai-settings-title">
+                        <span
+                            ><b>Execution settings</b
+                            ><small id="aiSettingsSummary">Stake 200 · Martingale ×2.2 · TP 1 · SL 5000</small></span
+                        ><span class="ai-settings-right"><span>DEMO</span><span class="settings-chevron">⌄</span></span>
+                    </summary>
+                    <div class="ai-settings-content">
+                        <div class="ai-settings-grid">
+                            <label
+                                >Stake (USD)<input
+                                    id="aiStake"
+                                    type="number"
+                                    min="0.35"
+                                    step="0.01"
+                                    value="200" /></label
+                            ><label
+                                >Martingale multiplier<input
+                                    id="aiMultiplier"
+                                    type="number"
+                                    min="1"
+                                    step="0.1"
+                                    value="2.2" /></label
+                            ><label
+                                >Take profit (USD)<input
+                                    id="aiTakeProfit"
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value="1" /></label
+                            ><label
+                                >Stop loss (USD)<input id="aiStopLoss" type="number" min="0" step="0.01" value="5000"
+                            /></label>
+                        </div>
+                        <div class="ai-martingale-line">
+                            <label><input id="aiMartingale" type="checkbox" checked /> Use martingale</label
+                            ><span>0 = no limit for TP / SL</span>
+                        </div>
+                    </div>
+                </details>
+                <button id="aiStop" class="ai-stop" disabled>■ &nbsp;Stop demo execution</button>
+                <div class="ai-log-tabs">
+                    <button class="active" data-ai-tab="transactions">Transactions</button
+                    ><button data-ai-tab="journal">Journal</button>
+                </div>
+                <div class="ai-log" id="aiLog">
+                    <div class="ai-log-empty">No demo transactions yet.</div>
+                </div>
+            </div>
         </section>
-        <div class="stats-row"><section class="card stats"><b>Parity <button type="button" class="info info-trigger" data-help="parity" aria-label="About Parity" aria-expanded="false">ⓘ</button></b><div class="split-label"><b><span class="square blue"></span> Even <span id="evenPercent">50.3%</span></b><b><span id="oddPercent">49.7%</span> Odd <span class="square orange"></span></b></div><div class="split-bar"><span id="evenBar" style="width:50%"></span><i id="oddBar" style="width:50%"></i></div><div class="two-stat"><div><small>Current run</small><b id="parityRun">1× even</b></div><div><small>Next-parity forecast</small><b>Even <span class="mini-blue"></span></b><small>50% · acc 47%</small></div></div><p class="muted small">Common runs &nbsp; <span id="parityCommon"></span></p></section><section class="card stats"><b>Direction <button type="button" class="info info-trigger" data-help="direction" aria-label="About Direction" aria-expanded="false">ⓘ</button></b><div class="split-label"><b><span class="square blue"></span> Rise <span id="risePercent">47.0%</span></b><b><span id="fallPercent">53.0%</span> Fall <span class="square orange"></span></b></div><div class="split-bar"><span id="riseBar" style="width:47%"></span><i id="fallBar" style="width:53%"></i></div><div class="two-stat"><div><small>Current run</small><b id="directionRun">1× fall</b></div><div><small>Flat ticks</small><b id="flatCount">0</b></div></div><p class="muted small">Common moves &nbsp; <span id="directionCommon"></span></p></section></div>
-        <section class="card chart-card"><div class="section-head"><b>Digits <button type="button" class="info info-trigger" data-help="digits" aria-label="About Digits" aria-expanded="false">ⓘ</button></b><span class="tiny muted" id="digitSummary">most 3 · least 8 · alternation 64.2%</span></div><div class="digit-chart" id="digitChart"></div><div class="chart-legend"><span><i class="square red"></i> most frequent</span><span><i class="square blue"></i> least frequent</span><span><i class="outline-square"></i> latest</span></div><div class="muted small">Common pairs &nbsp; <span class="tag">99 ×18</span> <span class="tag">09 ×17</span> <span class="tag">94 ×16</span></div></section>
-        <section class="card chart-card"><div class="section-head"><b>Over / under by barrier <button type="button" class="info info-trigger" data-help="barriers" aria-label="About Over and under by barrier" aria-expanded="false">ⓘ</button></b></div><div class="chart-legend"><span><i class="square blue"></i> over</span><span><i class="square dark-blue"></i> under</span><span>your barrier is highlighted</span></div><div class="barrier-chart" id="barrierChart"></div></section>
-      </main>
-      <div class="settings-scroll scroll" id="settingsScroll"><div class="idle card"><span class="gray-dot"></span><div><b id="idleTitle">Idle</b><small id="idleDescription">Under 2 · 1t · V75 · every cycle · martingale ×2.2 from 200.00</small></div></div><div class="next-stake">Next stake <b id="nextStake">200.00 USD</b></div>
-        <section class="card setting-card"><div class="setting-title"><b>Play <button type="button" class="info info-trigger" data-help="play" aria-label="About Play" aria-expanded="false">ⓘ</button></b><span class="muted small" id="playSummary">Under 2 · 1t</span><button class="collapse">⌃</button></div><div class="setting-body"><div class="pills trade-pills" id="tradeTypes"><button>Even</button><button>Odd</button><button>Rise</button><button>Fall</button><button>Over</button><button class="active">Under</button><button>Differs</button><button>Matches</button></div><div class="field-row" id="playFields"><label>Duration<input id="duration" type="number" value="1" min="1"><small>ticks per contract</small></label><label id="playBarrierField">Barrier<input id="barrierInput" type="number" value="2" min="0" max="9"><small id="barrierHelp">wins when the last digit is below it</small></label></div><div class="field-row" id="digitControls" hidden><label>Digit<select id="digitMode"><option value="random">Random</option><option value="fixed" selected>Fixed</option><option value="least">Least appearing</option><option value="most">Most appearing</option><option value="second">Second most appearing</option></select><small id="digitModeHelp">Select a digit manually</small></label><label>Which<input id="whichDigit" type="number" value="2" min="0" max="9" step="1" inputmode="numeric"><small>Enter 0–9 for a fixed digit</small></label></div><div class="switch-row"><button class="switch" id="alternate"><i></i></button><div><b>Alternate with Over</b><small id="alternateText">Off — Under every trade</small></div></div></div></section>
-        <section class="card setting-card"><div class="setting-title"><b>Entry gate <button type="button" class="info info-trigger" data-help="entry" aria-label="About Entry gate" aria-expanded="false">ⓘ</button></b><span class="muted small" id="gateSummary">bias ≥ 55%</span><button class="collapse">⌃</button></div><div class="setting-body"><label class="field-label">Place a trade<select id="gate"><option value="bias">Bias %</option><option value="pattern">Pattern</option><option value="common">Common sequence</option></select></label><div id="gateExtras"><label class="field-label" id="gateInputLabel">Minimum bias %<input id="gatePattern" type="number" min="0" max="100" step="0.1" value="55"></label><small class="help" id="gateHelp">Trade when the selected outcome’s observed frequency meets this threshold. Historical frequency is not a prediction.</small><div class="common-label" hidden>Common on <span class="market-short">V75</span> now: &nbsp; <button class="tag gate-tag">OOO ×335</button> <button class="tag gate-tag">OUO ×103</button> <button class="tag gate-tag">OOOO ×232</button> <button class="tag gate-tag">OOUO ×74</button></div><label class="field-label after-gate">After a gated trade<select id="afterGate"><option>Whenever it holds</option><option>Each new occurrence</option><option>Ignore while recovering</option><option>Once, then free-run</option></select></label><div class="gate-state" id="gateState"><span class="amber-dot"></span> Holding &nbsp;UO ≠ OO</div></div></div></section>
-        <section class="card setting-card"><div class="setting-title"><b>Stake <button type="button" class="info info-trigger" data-help="stake" aria-label="About Stake" aria-expanded="false">ⓘ</button></b><span class="muted small" id="stakeSummary">200.00 → 2129.60 after 3 losses</span><button class="collapse">⌃</button></div><div class="setting-body"><div class="segmented stake-tabs" id="stakeTabs"><button>Flat</button><button class="active">Martingale</button><button>Stakelist</button><button>Auto-stake</button></div><div class="field-row" id="stakeFields"><label id="baseStakeField">Stake<input id="stake" type="number" value="200" min="0.35" step="0.01"></label><label id="multiplierField">Multiplier<input id="multiplier" type="number" value="2.2" min="1" step="0.1"><small>applied after every loss</small></label></div><label class="field-label max-steps" id="maxStepsField">Max steps<input id="maxSteps" type="number" value="5" min="0"><small>Maximum increases after losses; then return to the base stake.</small></label><label class="field-label" id="stakeListField" hidden>Stake list<input id="stakeList" value="1, 2, 4, 8"><small>Separate stakes with commas. Advance on loss; reset on a win or after the last step.</small></label><label class="field-label auto-stake-field" id="autoStakeField" hidden>Balance percentage<input id="autoStakePercent" type="number" value="2" min="0.01" max="100" step="0.01"><small>Percentage of the available simulated balance per trade.</small></label><div class="stake-warning" id="stakeWarning" hidden></div></div></section>
-        <section class="card setting-card"><div class="setting-title"><b>Stop when <button type="button" class="info info-trigger" data-help="stop" aria-label="About Stop conditions" aria-expanded="false">ⓘ</button></b><span class="muted small" id="stopSummary">TP 1 · SL 5000</span><button class="collapse">⌃</button></div><div class="setting-body"><div class="field-row"><label>Profit reaches<input id="takeProfit" type="number" value="1" min="0"><small>0 = no limit</small></label><label>Loss reaches<input id="stopLoss" type="number" value="5000" min="0"><small>0 = no limit</small></label></div><div class="field-row"><label>Trades placed<input id="tradeLimit" type="number" value="0" min="0" step="1"><small>0 = no limit; the final trade settles</small></label><label>Losses in a row<input id="lossLimit" type="number" value="0" min="0" step="1"><small>0 = no limit</small></label></div></div></section>
-        <div class="session-heading"><b>Session <button type="button" class="info info-trigger" data-help="session" aria-label="About Session" aria-expanded="false">ⓘ</button></b></div><div class="session-cards"><div><small>Session P&amp;L</small><b id="sessionPL">0.00<br>USD</b></div><div><small>Won / lost</small><b id="sessionWL">0 / 0</b></div><div><small>Hit rate</small><b id="hitRate">—</b></div><div><small>Loss streak</small><b id="lossStreak">0</b></div></div><div class="session-empty" id="sessionEmpty"><b>No trades yet</b><span>Every contract this session lands here with its result.</span></div><div id="sessionTrades"></div>
-      </div>
-    </div>
-  </div>
-  <aside class="right-scroll scroll" id="activityPanel"><div class="right-tabs" id="rightTabs"><button class="active">Summary</button><button>Transactions</button><button>Journal</button></div><div id="summaryView" class="summary-view"><div class="summary-heading"><span class="summary-status-dot" id="summaryDot"></span><div><b id="summaryTitle">Bot is not running</b><small id="summarySubtitle">Choose your settings, then press Run.</small></div></div><div class="summary-detail-card"><span class="summary-eyebrow">CURRENT ACTIVITY</span><p id="summaryActivity">Waiting to start.</p><div class="summary-detail-row"><span>Market</span><b id="summaryMarket">Volatility 75</b></div><div class="summary-detail-row"><span>Contract</span><b id="summaryContract">Under 2 · 1 tick</b></div><div class="summary-detail-row"><span>Entry gate</span><b id="summaryGate">Bias %</b></div><div class="summary-detail-row"><span>After a gated trade</span><b id="summaryBehavior">Whenever it holds</b></div><div class="summary-detail-row"><span>Next stake</span><b id="summaryStake">200.00 USD</b></div></div><div class="summary-scanner" id="summaryScanner">AI scanner: off</div><div class="summary-demo-note">Simulation only · No real orders are placed</div></div>
-<div id="transactionView" hidden><div class="right-actions"><button disabled>Download</button><button disabled>View Detail</button></div><div class="transaction-head"><b>Type</b><b>Entry/Exit spot</b><b>Buy price and P/L</b></div><div class="empty-state" id="emptyState"><div class="box-icon">⬡</div><b id="emptyTitle">There are no transactions to display</b><p>Here are the possible reasons:</p><ul><li id="emptyReason">The bot is not running</li><li>The stats are cleared</li></ul></div><div id="transactionList"></div></div><div id="journalView" class="right-journal" hidden><div class="journal-title"><b>Session journal</b><small>Simulation events</small></div><div id="rightJournalEntries"><div class="ai-log-empty">No journal entries yet.</div></div></div><div class="right-bottom"><div class="totals"><div><b>Total stake</b><span id="totalStake">0.00 USD</span></div><div><b>Total payout</b><span id="totalPayout">0.00 USD</span></div><div><b>No. of runs</b><span id="totalRuns">0</span></div><div><b>Contracts lost</b><span id="totalLost">0</span></div><div><b>Contracts won</b><span id="totalWon">0</span></div><div><b>Total profit/loss</b><span id="totalPL">0.00 USD</span></div></div><button id="resetBtn" class="reset">Reset</button></div></aside>
-</div>
-<footer><span class="footer-date" id="clock" title="Current date and time in GMT">2026-11-23 09:18:37 GMT</span><button id="themeToggle" class="theme-toggle" type="button" aria-label="Switch to light theme" title="Switch to light theme">☾</button><button id="fullscreenToggle" class="fullscreen-toggle" type="button" aria-label="Enter full screen" aria-pressed="false" title="Enter full screen">⛶</button></footer>
-<button id="aiBtn" class="floating-ai" type="button" aria-label="Open AI digit analyser. Drag to move." aria-expanded="false" title="Open digit analyser — drag to move"><img class="scanner-logo" src="scanner-logo.png" alt=""><span class="ai-status-dot" aria-hidden="true"></span></button>
-<section id="aiPanel" class="ai-panel" aria-label="AI digit analyser" hidden>
-  <div class="ai-panel-header"><div class="ai-heading-icon">✦</div><div><div class="ai-eyebrow">INTELLIGENT TRADING ASSISTANT</div><h2>Digit Analyser</h2></div><button class="ai-close" id="aiClose" aria-label="Close analyser">×</button></div>
-  <div class="ai-panel-content"><div class="ai-notice"><span class="notice-dot"></span><span><b>SIMULATED DEMO</b> · No Deriv connection or real orders</span></div>
-  <p class="ai-description">Scan recent tick frequencies across markets and load a preferred signal. Past frequency is not a prediction of the next tick.</p>
-  <div class="scanner-heading"><div><b>Intelligent Scanner</b><small id="scannerStatus">Ready to scan</small></div><span class="scan-pulse" id="scannerPulse"></span></div>
-  <details class="scanner-filter" open><summary><b>Contracts to scan</b><small id="scanTypeCount">6 selected</small><span>⌄</span></summary><div class="scanner-filter-body"><div class="scan-type-grid" id="scanTypeOptions"><label><input type="checkbox" value="Even" checked> Even</label><label><input type="checkbox" value="Odd" checked> Odd</label><label><input type="checkbox" value="Over" checked> Over</label><label><input type="checkbox" value="Under" checked> Under</label><label><input type="checkbox" value="Matches" checked> Matches</label><label><input type="checkbox" value="Differs" checked> Differs</label></div><div class="scan-target-grid"><label id="scanOverField">Over barriers<input id="scanOver" type="text" placeholder="All: 0–8" aria-label="Over barriers"><small>e.g. 2 or 2, 3</small></label><label id="scanUnderField">Under barriers<input id="scanUnder" type="text" placeholder="All: 1–9" aria-label="Under barriers"><small>e.g. 2 or 2, 3</small></label><label id="scanMatchesField">Matches digits<input id="scanMatches" type="text" placeholder="All: 0–9" aria-label="Matches digits"><small>e.g. 1 or 1, 5</small></label><label id="scanDiffersField">Differs digits<input id="scanDiffers" type="text" placeholder="All: 0–9" aria-label="Differs digits"><small>e.g. 1 or 1, 5</small></label></div><small class="scan-filter-help">Leave a field empty to scan all valid digits. Separate choices with commas. Changes pause new AI entries until rescanning; an open demo trade can still settle.</small></div></details>
-  <details class="scanner-filter"><summary><b>Markets to scan</b><small id="scanMarketCount">17 selected</small><span>⌄</span></summary><div class="scanner-filter-body"><div class="scan-market-actions"><button id="scanSelectAll" type="button">Select all</button><button id="scanClearAll" type="button">Clear</button></div><div id="scanMarketOptions" class="scan-market-grid"></div></div></details>
-  <div class="scanner-actions"><button id="scanBtn" class="scanner-primary">✦ &nbsp;Intelligent Scanner</button><button id="loadSignalBtn" class="scanner-secondary" disabled>Load Preferred Signal</button></div>
-  <div class="signal-box" id="signalBox"><div class="signal-placeholder">Run the scanner to compare simulated market signals.</div></div>
-  <p class="risk-note">Historical hit rates only; no live quotes or payouts are available. A high hit rate does not imply profit. Martingale can rapidly increase losses; stop limits can be exceeded.</p>
-  <details class="ai-execution-settings"><summary class="ai-settings-title"><span><b>Execution settings</b><small id="aiSettingsSummary">Stake 200 · Martingale ×2.2 · TP 1 · SL 5000</small></span><span class="ai-settings-right"><span>DEMO</span><span class="settings-chevron">⌄</span></span></summary><div class="ai-settings-content">
-  <div class="ai-settings-grid"><label>Stake (USD)<input id="aiStake" type="number" min="0.35" step="0.01" value="200"></label><label>Martingale multiplier<input id="aiMultiplier" type="number" min="1" step="0.1" value="2.2"></label><label>Take profit (USD)<input id="aiTakeProfit" type="number" min="0" step="0.01" value="1"></label><label>Stop loss (USD)<input id="aiStopLoss" type="number" min="0" step="0.01" value="5000"></label></div>
-  <div class="ai-martingale-line"><label><input id="aiMartingale" type="checkbox" checked> Use martingale</label><span>0 = no limit for TP / SL</span></div></div></details><button id="aiStop" class="ai-stop" disabled>■ &nbsp;Stop demo execution</button>
-  <div class="ai-log-tabs"><button class="active" data-ai-tab="transactions">Transactions</button><button data-ai-tab="journal">Journal</button></div><div class="ai-log" id="aiLog"><div class="ai-log-empty">No demo transactions yet.</div></div>
-  </div>
-</section>
-<button id="riskBtn" class="floating-risk" type="button" aria-label="Open risk management guide. Drag to move." aria-expanded="false" title="Risk management — click to open or drag to move"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 20 5.7v5.8c0 5-3.1 8.1-8 10-4.9-1.9-8-5-8-10V5.7z"/><path d="M8.5 12.1l2.4 2.4 4.6-5"/></svg><span>RISK</span></button>
-<section id="riskPanel" class="risk-panel" role="dialog" aria-modal="false" aria-labelledby="riskTitle" hidden><header class="risk-header"><div class="risk-header-icon">♢</div><div><div class="risk-eyebrow">TRADE WITH A PLAN</div><h2 id="riskTitle">Risk Management</h2></div><button type="button" id="riskClose" aria-label="Close risk management">×</button></header><div class="risk-content"><p class="risk-intro">A clear plan can help you make more consistent decisions. Every trade still carries risk, even with an analysis tool.</p><section class="risk-section risk-benefits"><h3><span>↗</span> How analysis can help</h3><ul><li>Organize recent market data and make patterns easier to review.</li><li>Compare selected contracts and apply entry rules consistently instead of relying only on emotion.</li><li>Track results, position sizes and stop settings so you can review your decisions.</li></ul></section><section class="risk-section risk-cautions"><h3><span>!</span> Know the limitations</h3><ul><li>Past frequencies and patterns do not guarantee future outcomes. A high historical win rate is not proof of an edge.</li><li>Payouts and costs matter: many small wins can be outweighed by fewer large losses.</li><li>Martingale can rapidly increase stakes and losses. Fast or automated trading can also magnify losses quickly.</li><li>Stop-loss thresholds are not guaranteed loss caps; a trade may settle beyond the limit.</li></ul></section><section class="risk-section risk-plan"><h3><span>✓</span> A practical approach</h3><p>Decide what you can afford to lose, choose a stake and limits that fit your plan, and test in a demo before considering real funds. Review both winning and losing trades.</p></section><div class="risk-demo-note"><b>About this preview</b><span>This tool currently uses simulated data and payouts. It is not connected to Deriv or a real account.</span></div></div></section>
-<div id="phonePreviewOverlay" class="phone-preview-overlay" role="dialog" aria-modal="true" aria-labelledby="phonePreviewTitle" hidden><div class="phone-preview-dialog"><div class="phone-preview-header"><div><b id="phonePreviewTitle">Interactive phone preview</b><small>A separate simulated session · rotate using the buttons</small></div><div class="phone-preview-controls"><button type="button" id="previewPortrait" aria-pressed="false">Portrait</button><button type="button" id="previewLandscape" class="active" aria-pressed="true">Landscape</button><button type="button" id="previewClose" class="preview-close" aria-label="Close phone preview">×</button></div></div><div class="phone-frame-wrap"><div id="phoneViewport" class="phone-viewport"><iframe id="phoneFrame" title="Interactive phone-sized dashboard" allow="fullscreen" allowfullscreen></iframe></div></div><p class="phone-preview-hint">The entire dashboard remains visible. On a real phone, rotate to landscape and pinch to zoom if needed.</p></div></div>
-<aside id="infoPopover" class="info-popover" role="dialog" aria-modal="false" aria-labelledby="infoTitle" hidden><div class="info-popover-head"><b id="infoTitle"></b><button id="infoClose" type="button" aria-label="Close information">×</button></div><p id="infoText"></p></aside>
-<div id="toast" class="toast"></div><script src="app.js?v=30"></script></body></html>
+        <button
+            id="riskBtn"
+            class="floating-risk"
+            type="button"
+            aria-label="Open risk management guide. Drag to move."
+            aria-expanded="false"
+            title="Risk management — click to open or drag to move"
+        >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 2.5 20 5.7v5.8c0 5-3.1 8.1-8 10-4.9-1.9-8-5-8-10V5.7z" />
+                <path d="M8.5 12.1l2.4 2.4 4.6-5" /></svg
+            ><span>RISK</span>
+        </button>
+        <section id="riskPanel" class="risk-panel" role="dialog" aria-modal="false" aria-labelledby="riskTitle" hidden>
+            <header class="risk-header">
+                <div class="risk-header-icon">♢</div>
+                <div>
+                    <div class="risk-eyebrow">TRADE WITH A PLAN</div>
+                    <h2 id="riskTitle">Risk Management</h2>
+                </div>
+                <button type="button" id="riskClose" aria-label="Close risk management">×</button>
+            </header>
+            <div class="risk-content">
+                <p class="risk-intro">
+                    A clear plan can help you make more consistent decisions. Every trade still carries risk, even with
+                    an analysis tool.
+                </p>
+                <section class="risk-section risk-benefits">
+                    <h3><span>↗</span> How analysis can help</h3>
+                    <ul>
+                        <li>Organize recent market data and make patterns easier to review.</li>
+                        <li>
+                            Compare selected contracts and apply entry rules consistently instead of relying only on
+                            emotion.
+                        </li>
+                        <li>Track results, position sizes and stop settings so you can review your decisions.</li>
+                    </ul>
+                </section>
+                <section class="risk-section risk-cautions">
+                    <h3><span>!</span> Know the limitations</h3>
+                    <ul>
+                        <li>
+                            Past frequencies and patterns do not guarantee future outcomes. A high historical win rate
+                            is not proof of an edge.
+                        </li>
+                        <li>Payouts and costs matter: many small wins can be outweighed by fewer large losses.</li>
+                        <li>
+                            Martingale can rapidly increase stakes and losses. Fast or automated trading can also
+                            magnify losses quickly.
+                        </li>
+                        <li>Stop-loss thresholds are not guaranteed loss caps; a trade may settle beyond the limit.</li>
+                    </ul>
+                </section>
+                <section class="risk-section risk-plan">
+                    <h3><span>✓</span> A practical approach</h3>
+                    <p>
+                        Decide what you can afford to lose, choose a stake and limits that fit your plan, and test in a
+                        demo before considering real funds. Review both winning and losing trades.
+                    </p>
+                </section>
+                <div class="risk-demo-note">
+                    <b>About this preview</b
+                    ><span
+                        >This tool currently uses simulated data and payouts. It is not connected to Deriv or a real
+                        account.</span
+                    >
+                </div>
+            </div>
+        </section>
+        <div
+            id="phonePreviewOverlay"
+            class="phone-preview-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="phonePreviewTitle"
+            hidden
+        >
+            <div class="phone-preview-dialog">
+                <div class="phone-preview-header">
+                    <div>
+                        <b id="phonePreviewTitle">Interactive phone preview</b
+                        ><small>A separate simulated session · rotate using the buttons</small>
+                    </div>
+                    <div class="phone-preview-controls">
+                        <button type="button" id="previewPortrait" aria-pressed="false">Portrait</button
+                        ><button type="button" id="previewLandscape" class="active" aria-pressed="true">
+                            Landscape</button
+                        ><button type="button" id="previewClose" class="preview-close" aria-label="Close phone preview">
+                            ×
+                        </button>
+                    </div>
+                </div>
+                <div class="phone-frame-wrap">
+                    <div id="phoneViewport" class="phone-viewport">
+                        <iframe
+                            id="phoneFrame"
+                            title="Interactive phone-sized dashboard"
+                            allow="fullscreen"
+                            allowfullscreen
+                        ></iframe>
+                    </div>
+                </div>
+                <p class="phone-preview-hint">
+                    The entire dashboard remains visible. On a real phone, rotate to landscape and pinch to zoom if
+                    needed.
+                </p>
+            </div>
+        </div>
+        <aside
+            id="infoPopover"
+            class="info-popover"
+            role="dialog"
+            aria-modal="false"
+            aria-labelledby="infoTitle"
+            hidden
+        >
+            <div class="info-popover-head">
+                <b id="infoTitle"></b><button id="infoClose" type="button" aria-label="Close information">×</button>
+            </div>
+            <p id="infoText"></p>
+        </aside>
+        <div id="toast" class="toast"></div>
+        <script src="app.js?v=30"></script>
+        <script src="deriv-live.js?v=1"></script>
+    </body>
+</html>
