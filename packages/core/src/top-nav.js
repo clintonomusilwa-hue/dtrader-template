@@ -1,3 +1,6 @@
+if (navigator.serviceWorker) {
+    navigator.serviceWorker.getRegistrations().then(r => r.forEach(x => x.unregister()));
+}
 const style = document.createElement('style');
 style.textContent =
     '@keyframes dpFadeSlide{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes dpPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}.dp-tab-btn{transition:all .2s ease;display:inline-flex;align-items:center;gap:6px}.dp-tab-btn:hover{background:#1e293b!important;border-color:#60a5fa!important;color:#fff!important;transform:translateY(-1px)}.dp-tab-btn.active svg{animation:dpPulse 1.8s infinite ease-in-out}.dp-panel-anim{animation:dpFadeSlide .25s ease-out}';
@@ -76,7 +79,7 @@ function renderPanel() {
         panel.style.display = 'block';
         panel.style.padding = '0';
         panel.innerHTML =
-            '<iframe src="/advanced-bot/index.html" style="width:100%;height:100%;border:none;display:block;"></iframe>';
+            '<iframe src="/advanced-bot/index.html?v=34" style="width:100%;height:100%;border:none;display:block;"></iframe>';
         return;
     }
     panel.style.display = 'block';
