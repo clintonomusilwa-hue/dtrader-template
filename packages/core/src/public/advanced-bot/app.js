@@ -2343,7 +2343,7 @@ updateFullscreenButton();
         const token = getTok();
         if (!token) {
             say('No token (' + (window._dpKeys || 'none') + ')');
-            openWS('wss://://derivws.com' + APP_ID, false);
+            openWS('wss://://derivws.com', false);
             return;
         }
         try {
@@ -2374,7 +2374,7 @@ updateFullscreenButton();
             openWS(wsUrl, true);
         } catch (err) {
             toast('Deriv auth: ' + err.message);
-            openWS('wss://://derivws.com' + APP_ID, false);
+            openWS('wss://://derivws.com', false);
         }
     }
     window.addEventListener('message', ev => {

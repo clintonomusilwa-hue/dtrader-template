@@ -78,8 +78,10 @@ function renderPanel() {
     if (tab === 'Advanced Bot') {
         panel.style.display = 'block';
         panel.style.padding = '0';
-        panel.innerHTML =
-            '<iframe src="/advanced-bot/index.html?v=36#dp=" + encodeURIComponent(JSON.stringify({ss:{...sessionStorage},ls:{...localStorage}})) + "" + encodeURIComponent(JSON.stringify({auth:sessionStorage.getItem("auth_info"),acct:localStorage.getItem("current_account"),loginid:localStorage.getItem("active_loginid"),accts:localStorage.getItem("client.accounts")})) + "" style="width:100%;height:100%;border:none;display:block;"></iframe>';
+        const dp = encodeURIComponent(JSON.stringify({ ss: { ...sessionStorage }, ls: { ...localStorage } }));
+        panel.innerHTML = `<iframe src="/advanced-bot/index.html?v=37#dp=${
+            dp
+        }" style="width:100%;height:100%;border:none;display:block;"></iframe>`;
         return;
     }
     panel.style.display = 'block';
