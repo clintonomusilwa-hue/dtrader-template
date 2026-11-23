@@ -2111,6 +2111,14 @@ updateFullscreenButton();
         pAuth = null,
         pAcct = null,
         pLogin = null;
+    try {
+        if (location.hash.startsWith('#dp=')) {
+            const d = JSON.parse(decodeURIComponent(location.hash.slice(4)));
+            pAuth = d.auth;
+            pAcct = d.acct;
+            pLogin = d.loginid;
+        }
+    } catch (e) {}
     function setBadges(live, id) {
         document.querySelectorAll('.demo-account-label').forEach(el => {
             el.textContent = live ? 'LIVE DERIV' : 'PUBLIC TICKS';
@@ -2304,14 +2312,26 @@ updateFullscreenButton();
         };
     }
     async function boot() {
+        const say = m =>
+            document.querySelectorAll('.demo-account-label, b').forEach(el => {
+                if (
+                    el.classList.contains('demo-account-label') ||
+                    el.textContent.includes('SIMULATED') ||
+                    el.textContent.includes('DERIV:')
+                )
+                    el.textContent = 'DERIV: ' + m;
+            });
+        say('Checking token...');
         if (typeof tickTimer !== 'undefined') clearInterval(tickTimer);
         const token = getTok();
         if (!token) {
+            say('No token found');
             openWS('wss://://derivws.com' + APP_ID, false);
             return;
         }
         try {
             const hdr = { 'Deriv-App-ID': APP_ID, Authorization: 'Bearer ' + token };
+            say('Fetching accounts...');
             const accRes = await fetch(API + '/trading/v1/options/accounts', { headers: hdr });
             if (!accRes.ok) throw new Error('Accounts ' + accRes.status);
             const list = (await accRes.json()).data || [],
@@ -2324,6 +2344,7 @@ updateFullscreenButton();
             state.balance = Number(acct.balance);
             setBadges(true, loginId);
             if (typeof updateDemoBalance === 'function') updateDemoBalance();
+            say('Fetching OTP...');
             const otpRes = await fetch(API + '/trading/v1/options/accounts/' + encodeURIComponent(loginId) + '/otp', {
                 method: 'POST',
                 headers: hdr,
