@@ -47,6 +47,12 @@ const MenuLinks = observer(({ is_traders_hub_routes = false }) => {
     return (
         <div key={`menu-links__${currentLang}`} className='header__menu-links'>
             {!is_traders_hub_routes && <ReportTab />}
+         <a id='dt_advanced_bot_tab' href='/advanced-bot/index.html' className='header__menu-link'>
+    <Text size='m' line_height='xs' title='Advanced Bot' className='header__menu-link-text'>
+        Advanced Bot
+    </Text>
+</a>
+   
         </div>
     );
 });
