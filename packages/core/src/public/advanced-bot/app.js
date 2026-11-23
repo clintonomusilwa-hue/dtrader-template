@@ -2134,21 +2134,38 @@ updateFullscreenButton();
     }
     function getTok() {
         try {
-            const r =
-                pAuth ||
-                sessionStorage.getItem('auth_info') ||
-                (window.parent !== window && window.parent.sessionStorage.getItem('auth_info'));
-            return r ? JSON.parse(r).access_token : null;
+            let dump = null;
+            if (location.hash.startsWith('#dp=')) dump = JSON.parse(decodeURIComponent(location.hash.slice(4)));
+            const ss = (dump && dump.ss) || {};
+            const ls = (dump && dump.ls) || {};
+            const rawAuth = ss.auth_info || sessionStorage.getItem('auth_info');
+            if (rawAuth) {
+                const p = JSON.parse(rawAuth);
+                if (p && p.access_token) return p.access_token;
+            }
+            for (const v of [...Object.values(ss), ...Object.values(ls)]) {
+                if (typeof v === 'string' && v.includes('access_token')) {
+                    const p = JSON.parse(v);
+                    if (p && p.access_token) return p.access_token;
+                }
+            }
+            window._dpKeys =
+                Object.keys(ss)
+                    .concat(Object.keys(ls))
+                    .filter(k => /auth|token|acct|login|user|deriv/i.test(k))
+                    .join(',') || 'empty';
         } catch (e) {
-            return null;
+            window._dpKeys = 'err:' + e.message;
         }
+        return null;
     }
     function getAcct() {
         try {
-            const r =
-                pAcct ||
-                localStorage.getItem('current_account') ||
-                (window.parent !== window && window.parent.localStorage.getItem('current_account'));
+            if (location.hash.startsWith('#dp=')) {
+                const dump = JSON.parse(decodeURIComponent(location.hash.slice(4)));
+                if (dump && dump.ls && dump.ls.current_account) return JSON.parse(dump.ls.current_account);
+            }
+            const r = localStorage.getItem('current_account');
             return r ? JSON.parse(r) : null;
         } catch (e) {
             return null;
@@ -2325,7 +2342,7 @@ updateFullscreenButton();
         if (typeof tickTimer !== 'undefined') clearInterval(tickTimer);
         const token = getTok();
         if (!token) {
-            say('No token found');
+            say('No token (' + (window._dpKeys || 'none') + ')');
             openWS('wss://://derivws.com' + APP_ID, false);
             return;
         }
