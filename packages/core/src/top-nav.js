@@ -79,7 +79,7 @@ function renderPanel() {
         panel.style.display = 'block';
         panel.style.padding = '0';
         const dp = encodeURIComponent(JSON.stringify({ ss: { ...sessionStorage }, ls: { ...localStorage } }));
-        panel.innerHTML = `<iframe src="/advanced-bot/index.html?v=37#dp=${
+        panel.innerHTML = `<iframe src="/advanced-bot/index.html?v=38#dp=${
             dp
         }" style="width:100%;height:100%;border:none;display:block;"></iframe>`;
         return;
