@@ -79,7 +79,7 @@ function renderPanel() {
         panel.style.display = 'block';
         panel.style.padding = '0';
         panel.innerHTML =
-            '<iframe src="/bot-builder/index.html" style="width:100%;height:100%;border:none;display:block;"></iframe>';
+            '<iframe src="/bot-builder/" style="width:100%;height:100%;border:none;display:block;"></iframe>';
         return;
     }
     if (tab === 'Advanced Bot') {
