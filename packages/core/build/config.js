@@ -83,6 +83,10 @@ const copyConfig = base => {
             },
         },
         {
+            from: path.resolve(__dirname, '../src/public/bot-builder'),
+            to: 'bot-builder',
+        },
+        {
             from: path.resolve(__dirname, '../src/public/images/common/callback_loader.gif'),
             to: 'public/images/common/callback_loader.gif',
         },
