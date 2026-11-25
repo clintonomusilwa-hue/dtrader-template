@@ -1,0 +1,1325 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="theme-color" content="#0b0e14" />
+        <title>Scanner Bot | Deriv Signal Scanner</title>
+        <style>
+            :root {
+                color-scheme: dark;
+                font-family:
+                    Inter,
+                    ui-sans-serif,
+                    system-ui,
+                    -apple-system,
+                    BlinkMacSystemFont,
+                    'Segoe UI',
+                    sans-serif;
+                background: #0b0e14;
+                color: #e2e8f0;
+                font-synthesis: none;
+                text-rendering: optimizeLegibility;
+                --panel: rgba(15, 23, 34, 0.94);
+                --panel-border: #1e293b;
+                --muted: #8290a4;
+                --cyan: #38bdf8;
+                --green: #22c55e;
+                --red: #fb7185;
+            }
+
+            * {
+                box-sizing: border-box;
+            }
+
+            body {
+                min-width: 320px;
+                min-height: 100vh;
+                margin: 0;
+                background: #0b0e14;
+            }
+
+            #matrix {
+                position: fixed;
+                inset: 0;
+                z-index: 0;
+                width: 100%;
+                height: 100%;
+                opacity: 0.34;
+                pointer-events: none;
+            }
+
+            .app {
+                position: relative;
+                z-index: 1;
+                width: min(1180px, calc(100% - 32px));
+                margin: 0 auto;
+                padding: 26px 0 42px;
+            }
+
+            .topbar,
+            .heading,
+            .row,
+            .panel-heading,
+            .price-line,
+            .signal-line,
+            .button-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 14px;
+            }
+
+            .topbar {
+                padding: 0 0 24px;
+                border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+            }
+
+            .brand {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+
+            .brand-mark {
+                display: grid;
+                width: 42px;
+                height: 42px;
+                place-items: center;
+                border: 1px solid rgba(56, 189, 248, 0.55);
+                border-radius: 12px;
+                color: var(--cyan);
+                background: rgba(56, 189, 248, 0.08);
+                box-shadow: 0 0 24px rgba(56, 189, 248, 0.12);
+            }
+
+            h1,
+            h2,
+            p {
+                margin: 0;
+            }
+
+            h1 {
+                font-size: clamp(20px, 3vw, 28px);
+                letter-spacing: -0.04em;
+            }
+
+            .eyebrow,
+            .label {
+                color: var(--muted);
+                font-size: 11px;
+                font-weight: 700;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+            }
+
+            .eyebrow {
+                margin-bottom: 4px;
+                color: var(--cyan);
+            }
+
+            .connection {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                color: var(--muted);
+                font-size: 12px;
+            }
+
+            .connection-dot,
+            .live-dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                background: #64748b;
+            }
+
+            .connection.connected .connection-dot,
+            .live-dot {
+                background: var(--green);
+                box-shadow: 0 0 12px rgba(34, 197, 94, 0.6);
+            }
+
+            .connection.error .connection-dot {
+                background: var(--red);
+                box-shadow: 0 0 12px rgba(251, 113, 133, 0.5);
+            }
+
+            .grid {
+                display: grid;
+                grid-template-columns: minmax(0, 1.65fr) minmax(280px, 0.85fr);
+                gap: 16px;
+                margin-top: 20px;
+            }
+
+            .stack {
+                display: grid;
+                align-content: start;
+                gap: 16px;
+            }
+
+            .card {
+                overflow: hidden;
+                border: 1px solid var(--panel-border);
+                border-radius: 14px;
+                background: var(--panel);
+                box-shadow: 0 14px 40px rgba(0, 0, 0, 0.2);
+                backdrop-filter: blur(8px);
+            }
+
+            .card-inner {
+                padding: 18px;
+            }
+
+            .panel-heading {
+                margin-bottom: 16px;
+            }
+
+            h2 {
+                font-size: 15px;
+                font-weight: 700;
+            }
+
+            .market-list {
+                display: grid;
+                grid-template-columns: repeat(5, minmax(0, 1fr));
+                gap: 8px;
+            }
+
+            button,
+            input,
+            select {
+                font: inherit;
+            }
+
+            button {
+                color: inherit;
+            }
+
+            .market-button,
+            .window-button,
+            .sound-button {
+                min-height: 36px;
+                border: 1px solid #293548;
+                border-radius: 8px;
+                color: #a9b5c5;
+                background: #111a27;
+                cursor: pointer;
+                transition:
+                    border-color 0.15s,
+                    background 0.15s,
+                    color 0.15s,
+                    transform 0.15s;
+            }
+
+            .market-button:hover,
+            .window-button:hover,
+            .sound-button:hover {
+                border-color: #42718a;
+                color: #e7f8ff;
+            }
+
+            .market-button.active,
+            .window-button.active {
+                border-color: var(--cyan);
+                color: #dff7ff;
+                background: rgba(56, 189, 248, 0.13);
+                box-shadow: inset 0 0 16px rgba(56, 189, 248, 0.08);
+            }
+
+            .market-button {
+                padding: 9px 5px;
+                font-size: 12px;
+                font-weight: 700;
+            }
+
+            .price-card {
+                position: relative;
+            }
+
+            .price-line {
+                align-items: flex-end;
+                margin-top: 20px;
+            }
+
+            .market-name {
+                color: var(--muted);
+                font-size: 13px;
+            }
+
+            .price {
+                color: #f1f5f9;
+                font-variant-numeric: tabular-nums;
+                font-size: clamp(28px, 5vw, 42px);
+                font-weight: 750;
+                letter-spacing: -0.04em;
+            }
+
+            .last-digit {
+                display: inline-grid;
+                width: 38px;
+                height: 48px;
+                margin-left: 9px;
+                place-items: center;
+                border: 1px solid rgba(56, 189, 248, 0.4);
+                border-radius: 9px;
+                color: var(--cyan);
+                background: rgba(56, 189, 248, 0.1);
+                font-size: 24px;
+                font-variant-numeric: tabular-nums;
+            }
+
+            .window-row {
+                display: flex;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 7px;
+                margin-top: 18px;
+            }
+
+            .window-button {
+                min-width: 49px;
+                padding: 7px 10px;
+                font-size: 12px;
+            }
+
+            .updated {
+                margin-left: auto;
+                color: var(--muted);
+                font-size: 11px;
+            }
+
+            .digit-grid {
+                display: grid;
+                grid-template-columns: repeat(10, minmax(0, 1fr));
+                gap: 7px;
+            }
+
+            .digit {
+                position: relative;
+                min-width: 0;
+                padding: 10px 4px 8px;
+                border: 1px solid #253144;
+                border-radius: 9px;
+                background: rgba(17, 26, 39, 0.86);
+                text-align: center;
+            }
+
+            .digit strong {
+                display: block;
+                margin-bottom: 5px;
+                color: #dce5ef;
+                font-size: 17px;
+            }
+
+            .digit span {
+                color: var(--muted);
+                font-size: 10px;
+                font-variant-numeric: tabular-nums;
+            }
+
+            .digit.hot {
+                border-color: rgba(34, 197, 94, 0.78);
+                background: rgba(34, 197, 94, 0.11);
+                box-shadow: inset 0 0 12px rgba(34, 197, 94, 0.08);
+            }
+
+            .digit.hot strong,
+            .digit.hot span {
+                color: #4ade80;
+            }
+
+            .digit.cold {
+                border-color: rgba(251, 113, 133, 0.78);
+                background: rgba(251, 113, 133, 0.1);
+            }
+
+            .digit.cold strong,
+            .digit.cold span {
+                color: #fda4af;
+            }
+
+            .empty-note {
+                padding: 16px 8px;
+                color: var(--muted);
+                font-size: 12px;
+                text-align: center;
+            }
+
+            .field {
+                display: grid;
+                gap: 8px;
+                margin-bottom: 16px;
+            }
+
+            select,
+            input[type='number'] {
+                width: 100%;
+                min-height: 42px;
+                padding: 0 12px;
+                border: 1px solid #2a384c;
+                border-radius: 8px;
+                outline: none;
+                color: #e2e8f0;
+                background: #101824;
+            }
+
+            select:focus,
+            input[type='number']:focus {
+                border-color: var(--cyan);
+                box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.12);
+            }
+
+            .scan-button,
+            .trade-button {
+                width: 100%;
+                min-height: 44px;
+                border: 0;
+                border-radius: 9px;
+                color: #04131d;
+                background: var(--cyan);
+                font-weight: 800;
+                cursor: pointer;
+                transition:
+                    transform 0.15s,
+                    filter 0.15s,
+                    opacity 0.15s;
+            }
+
+            .scan-button:hover,
+            .trade-button:hover {
+                filter: brightness(1.09);
+                transform: translateY(-1px);
+            }
+
+            button:disabled {
+                cursor: not-allowed;
+                opacity: 0.52;
+                transform: none;
+            }
+
+            .sound-button {
+                padding: 7px 10px;
+                font-size: 11px;
+                font-weight: 700;
+            }
+
+            .signal-box {
+                min-height: 118px;
+                margin-top: 15px;
+                padding: 14px;
+                border: 1px solid #263449;
+                border-radius: 10px;
+                background: rgba(8, 14, 22, 0.8);
+            }
+
+            .signal-box.ready {
+                border-color: rgba(34, 197, 94, 0.45);
+                box-shadow: inset 0 0 20px rgba(34, 197, 94, 0.05);
+            }
+
+            .signal-title {
+                margin: 9px 0 5px;
+                color: #4ade80;
+                font-size: 17px;
+                font-weight: 800;
+            }
+
+            .signal-detail {
+                color: var(--muted);
+                font-size: 12px;
+                line-height: 1.5;
+            }
+
+            .trade-fields {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) 120px;
+                gap: 10px;
+                margin-top: 14px;
+            }
+
+            .trade-button {
+                margin-top: 10px;
+                color: #ecfdf5;
+                background: #15803d;
+            }
+
+            .auth-note,
+            .footnote {
+                margin-top: 10px;
+                color: var(--muted);
+                font-size: 11px;
+                line-height: 1.5;
+            }
+
+            .terminal {
+                max-height: 180px;
+                overflow: auto;
+                padding: 12px 14px;
+                border-top: 1px solid #1e293b;
+                color: #80e6ab;
+                background: rgba(4, 9, 14, 0.9);
+                font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+                font-size: 11px;
+                line-height: 1.75;
+            }
+
+            .terminal-line {
+                overflow-wrap: anywhere;
+            }
+
+            .terminal-line .time {
+                margin-right: 8px;
+                color: #5d7780;
+            }
+
+            .terminal-line.warn {
+                color: #fbbf24;
+            }
+
+            .terminal-line.error {
+                color: #fda4af;
+            }
+
+            .scan-progress {
+                height: 2px;
+                overflow: hidden;
+                background: #172333;
+            }
+
+            .scan-progress span {
+                display: block;
+                width: 0;
+                height: 100%;
+                background: var(--cyan);
+            }
+
+            .scan-progress.running span {
+                animation: scan 1.8s ease-in-out forwards;
+                box-shadow: 0 0 12px var(--cyan);
+            }
+
+            @keyframes scan {
+                from {
+                    width: 0;
+                }
+                to {
+                    width: 100%;
+                }
+            }
+
+            .disclaimer {
+                margin-top: 17px;
+                color: #738196;
+                font-size: 11px;
+                line-height: 1.55;
+            }
+
+            @media (max-width: 820px) {
+                .grid {
+                    grid-template-columns: 1fr;
+                }
+
+                .market-list {
+                    grid-template-columns: repeat(5, minmax(0, 1fr));
+                }
+
+                .stack:last-child {
+                    grid-row: 1;
+                }
+            }
+
+            @media (max-width: 520px) {
+                .app {
+                    width: min(100% - 22px, 1180px);
+                    padding-top: 17px;
+                }
+
+                .topbar {
+                    align-items: flex-start;
+                }
+
+                .connection {
+                    justify-content: flex-end;
+                    max-width: 112px;
+                    text-align: right;
+                }
+
+                .card-inner {
+                    padding: 14px;
+                }
+
+                .market-list {
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                }
+
+                .digit-grid {
+                    gap: 4px;
+                }
+
+                .digit {
+                    padding: 8px 1px 6px;
+                }
+
+                .digit strong {
+                    font-size: 14px;
+                }
+
+                .digit span {
+                    font-size: 9px;
+                }
+
+                .updated {
+                    width: 100%;
+                    margin-left: 0;
+                }
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                *,
+                *::before,
+                *::after {
+                    scroll-behavior: auto !important;
+                    animation-duration: 0.01ms !important;
+                    animation-iteration-count: 1 !important;
+                    transition-duration: 0.01ms !important;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <canvas id="matrix" aria-hidden="true"></canvas>
+        <div class="app">
+            <header class="topbar">
+                <div class="brand">
+                    <div class="brand-mark" aria-hidden="true">⌁</div>
+                    <div>
+                        <div class="eyebrow">DERIV · LIVE MARKET DATA</div>
+                        <h1>Signal Scanner</h1>
+                    </div>
+                </div>
+                <div id="connection" class="connection" role="status" aria-live="polite">
+                    <span class="connection-dot"></span><span id="connectionText">Connecting to Deriv…</span>
+                </div>
+            </header>
+
+            <main class="grid">
+                <div class="stack">
+                    <section class="card">
+                        <div class="card-inner">
+                            <div class="panel-heading">
+                                <div>
+                                    <div class="eyebrow">MARKET SELECTOR</div>
+                                    <h2>Volatility Indices</h2>
+                                </div>
+                                <span class="connection"><span class="live-dot"></span> Live feed</span>
+                            </div>
+                            <div id="marketList" class="market-list" aria-label="Select market"></div>
+                        </div>
+                    </section>
+
+                    <section class="card price-card">
+                        <div class="card-inner">
+                            <div class="row">
+                                <div class="label">Selected market</div>
+                                <div id="tickMeta" class="connection">Waiting for tick history</div>
+                            </div>
+                            <div class="price-line">
+                                <div>
+                                    <div id="marketName" class="market-name">Volatility 10 Index</div>
+                                    <div class="price" id="price">—</div>
+                                </div>
+                                <div>
+                                    <div class="label">Last digit</div>
+                                    <div id="lastDigit" class="last-digit">—</div>
+                                </div>
+                            </div>
+                            <div class="window-row" id="windowList" aria-label="Tick history window"></div>
+                        </div>
+                    </section>
+
+                    <section class="card">
+                        <div class="card-inner">
+                            <div class="panel-heading">
+                                <div>
+                                    <div class="eyebrow">DIGIT DISTRIBUTION</div>
+                                    <h2>Frequency by last digit</h2>
+                                </div>
+                                <span id="sampleSize" class="connection">0 samples</span>
+                            </div>
+                            <div id="digitGrid" class="digit-grid" aria-live="polite"></div>
+                            <p class="footnote">
+                                Percentages use the selected trailing tick window. Green marks the hottest digit; red
+                                marks the coldest.
+                            </p>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="stack">
+                    <section class="card">
+                        <div class="card-inner">
+                            <div class="panel-heading">
+                                <div>
+                                    <div class="eyebrow">SIGNAL ENGINE</div>
+                                    <h2>Run a frequency scan</h2>
+                                </div>
+                                <button id="soundToggle" class="sound-button" type="button" aria-pressed="true">
+                                    SOUND ON
+                                </button>
+                            </div>
+                            <label class="field">
+                                <span class="label">Strategy</span>
+                                <select id="strategy">
+                                    <option value="match-diff">Matches &amp; Differs</option>
+                                    <option value="even-odd">Even / Odd</option>
+                                    <option value="over-under">Over 4 / Under 5</option>
+                                </select>
+                            </label>
+                            <button id="scanButton" class="scan-button" type="button">
+                                ◉ &nbsp; Start Signal Scan
+                            </button>
+                            <div id="signalBox" class="signal-box" aria-live="polite">
+                                <div class="label">LATEST SCAN</div>
+                                <div id="signalTitle" class="signal-title">No signal yet</div>
+                                <div id="signalDetail" class="signal-detail">
+                                    Choose a market and scan when enough live tick data is available.
+                                </div>
+                            </div>
+                            <div id="tradeArea" hidden>
+                                <div class="trade-fields">
+                                    <label class="field" style="margin: 0">
+                                        <span class="label">Stake</span>
+                                        <input
+                                            id="stake"
+                                            type="number"
+                                            min="0.35"
+                                            step="0.01"
+                                            value="1"
+                                            inputmode="decimal"
+                                        />
+                                    </label>
+                                    <label class="field" style="margin: 0">
+                                        <span class="label">Currency</span>
+                                        <input id="currency" type="text" value="—" readonly />
+                                    </label>
+                                </div>
+                                <button id="tradeButton" class="trade-button" type="button" disabled>
+                                    Execute Signal Trade · 1 tick
+                                </button>
+                                <p id="tradeAuthNote" class="auth-note">Checking your Deriv session…</p>
+                            </div>
+                            <p id="loginNote" class="auth-note">
+                                Log in to Deriv to enable one-click signal execution. Scanning is available without
+                                signing in.
+                            </p>
+                        </div>
+                        <div class="scan-progress" id="scanProgress" aria-hidden="true"><span></span></div>
+                        <div id="terminal" class="terminal" role="log" aria-live="polite">
+                            <div class="terminal-line">
+                                <span class="time">[BOOT]</span> Scanner initialized. Waiting for market stream…
+                            </div>
+                        </div>
+                    </section>
+                    <p class="disclaimer">
+                        Signals are based only on recent digit frequencies. Past ticks do not predict future results.
+                        Trades are real and can lose the full stake. Review your account and stake before execution.
+                    </p>
+                </div>
+            </main>
+        </div>
+
+        <script>
+            (() => {
+                'use strict';
+
+                const APP_ID = '34ZWCxDCQi8ZtdAfMls5X';
+                const WS_URL = `wss://ws.derivws.com/websockets/v3?app_id=${encodeURIComponent(APP_ID)}`;
+                const SYMBOLS = [
+                    ['R_10', 'Volatility 10 Index'],
+                    ['1HZ10V', 'Volatility 10 (1s) Index'],
+                    ['R_25', 'Volatility 25 Index'],
+                    ['1HZ25V', 'Volatility 25 (1s) Index'],
+                    ['R_50', 'Volatility 50 Index'],
+                    ['1HZ50V', 'Volatility 50 (1s) Index'],
+                    ['R_75', 'Volatility 75 Index'],
+                    ['1HZ75V', 'Volatility 75 (1s) Index'],
+                    ['R_100', 'Volatility 100 Index'],
+                    ['1HZ100V', 'Volatility 100 (1s) Index'],
+                ];
+                const WINDOWS = [50, 100, 250, 500];
+                const byId = id => document.getElementById(id);
+                const markets = new Map(
+                    SYMBOLS.map(([symbol, name]) => [
+                        symbol,
+                        { symbol, name, ticks: [], pipSize: null, price: null, digit: null },
+                    ])
+                );
+                const state = {
+                    selectedSymbol: 'R_10',
+                    windowSize: 100,
+                    socket: null,
+                    requestId: 1,
+                    historyRequestIds: new Map(),
+                    soundOn: true,
+                    signal: null,
+                    scanning: false,
+                    tradePending: false,
+                    accessToken: null,
+                    authorized: false,
+                    currency: null,
+                    accountId: null,
+                    reconnectTimer: null,
+                };
+                const logs = [];
+
+                const log = (message, kind = '') => {
+                    const time = new Date().toLocaleTimeString();
+                    logs.push({ time, message, kind });
+                    if (logs.length > 30) logs.shift();
+                    byId('terminal').innerHTML = logs
+                        .slice(-8)
+                        .map(
+                            entry =>
+                                `<div class="terminal-line ${entry.kind}"><span class="time">[${entry.time}]</span>${escapeHtml(
+                                    entry.message
+                                )}</div>`
+                        )
+                        .join('');
+                    byId('terminal').scrollTop = byId('terminal').scrollHeight;
+                };
+
+                const escapeHtml = text =>
+                    String(text).replace(/[&<>"']/g, character => {
+                        const entities = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+                        return entities[character];
+                    });
+
+                const tokenFromSession = () => {
+                    try {
+                        const info = JSON.parse(sessionStorage.getItem('auth_info') || 'null');
+                        if (!info || (info.expires_at && Date.now() >= info.expires_at)) return null;
+                        return info.access_token || null;
+                    } catch (error) {
+                        log('Could not read the saved Deriv session: ' + error.message, 'error');
+                        return null;
+                    }
+                };
+
+                const setConnection = (text, mode = '') => {
+                    byId('connection').className = `connection ${mode}`;
+                    byId('connectionText').textContent = text;
+                };
+
+                const request = payload => {
+                    if (!state.socket || state.socket.readyState !== WebSocket.OPEN) {
+                        throw new Error('Deriv WebSocket is not connected');
+                    }
+                    const reqId = state.requestId++;
+                    state.socket.send(JSON.stringify({ ...payload, req_id: reqId }));
+                    return reqId;
+                };
+
+                const getDigit = (quote, pipSize) => {
+                    const precision = Number.isInteger(pipSize)
+                        ? pipSize
+                        : Math.max(0, (String(quote).split('.')[1] || '').length);
+                    const formatted = Number(quote).toFixed(Math.min(precision, 12));
+                    const digits = formatted.replace(/\D/g, '');
+                    return Number(digits.slice(-1));
+                };
+
+                const formatQuote = (quote, pipSize) => {
+                    const precision = Number.isInteger(pipSize)
+                        ? pipSize
+                        : Math.max(0, (String(quote).split('.')[1] || '').length);
+                    return Number(quote).toFixed(Math.min(precision, 12));
+                };
+
+                const drawMarkets = () => {
+                    byId('marketList').innerHTML = SYMBOLS.map(
+                        ([symbol]) =>
+                            `<button class="market-button${symbol === state.selectedSymbol ? ' active' : ''}" type="button" data-symbol="${symbol}" aria-pressed="${symbol === state.selectedSymbol}">${symbol}</button>`
+                    ).join('');
+                    byId('marketList')
+                        .querySelectorAll('button')
+                        .forEach(button => {
+                            button.addEventListener('click', () => selectMarket(button.dataset.symbol));
+                        });
+                };
+
+                const drawWindows = () => {
+                    byId('windowList').innerHTML =
+                        '<span class="label">Ticks</span>' +
+                        WINDOWS.map(
+                            size =>
+                                `<button class="window-button${size === state.windowSize ? ' active' : ''}" type="button" data-window="${size}" aria-pressed="${size === state.windowSize}">${size}</button>`
+                        ).join('') +
+                        '<span id="updated" class="updated">Updates as ticks arrive</span>';
+                    byId('windowList')
+                        .querySelectorAll('button')
+                        .forEach(button => {
+                            button.addEventListener('click', () => {
+                                state.windowSize = Number(button.dataset.window);
+                                drawWindows();
+                                renderSelectedMarket();
+                                requestHistory(state.selectedSymbol);
+                            });
+                        });
+                };
+
+                const currentTicks = () => (markets.get(state.selectedSymbol)?.ticks || []).slice(-state.windowSize);
+
+                const renderSelectedMarket = () => {
+                    const market = markets.get(state.selectedSymbol);
+                    byId('marketName').textContent = market.name;
+                    byId('price').textContent = market.price === null ? '—' : formatQuote(market.price, market.pipSize);
+                    byId('lastDigit').textContent = market.digit === null ? '—' : String(market.digit);
+                    const ticks = currentTicks();
+                    byId('sampleSize').textContent = `${ticks.length} / ${state.windowSize} samples`;
+                    byId('tickMeta').textContent = ticks.length
+                        ? `${market.ticks.length} ticks buffered`
+                        : 'Waiting for tick history';
+                    const frequencies = Array(10).fill(0);
+                    ticks.forEach(tick => {
+                        frequencies[tick.digit] += 1;
+                    });
+                    const hottest = ticks.length ? Math.max(...frequencies) : -1;
+                    const coldest = ticks.length ? Math.min(...frequencies) : -1;
+                    byId('digitGrid').innerHTML = frequencies
+                        .map((count, digit) => {
+                            const percentage = ticks.length ? (count / ticks.length) * 100 : 0;
+                            const tone =
+                                ticks.length && count === hottest && hottest !== coldest
+                                    ? 'hot'
+                                    : ticks.length && count === coldest && hottest !== coldest
+                                      ? 'cold'
+                                      : '';
+                            return `<div class="digit ${tone}" aria-label="Digit ${digit}: ${percentage.toFixed(1)} percent"><strong>${digit}</strong><span>${percentage.toFixed(1)}%</span></div>`;
+                        })
+                        .join('');
+                };
+
+                const selectMarket = symbol => {
+                    if (!markets.has(symbol)) return;
+                    state.selectedSymbol = symbol;
+                    state.signal = null;
+                    drawMarkets();
+                    renderSelectedMarket();
+                    byId('signalBox').classList.remove('ready');
+                    byId('signalTitle').textContent = 'No signal yet';
+                    byId('signalDetail').textContent = 'Run a new scan for this market.';
+                    updateTradeButton();
+                    requestHistory(symbol);
+                    log(`Selected ${symbol}; loading the last ${state.windowSize} ticks.`);
+                };
+
+                const requestHistory = symbol => {
+                    if (!state.socket || state.socket.readyState !== WebSocket.OPEN) return;
+                    try {
+                        const reqId = request({
+                            ticks_history: symbol,
+                            count: state.windowSize,
+                            end: 'latest',
+                            style: 'ticks',
+                        });
+                        state.historyRequestIds.set(reqId, symbol);
+                    } catch (error) {
+                        log(error.message, 'warn');
+                    }
+                };
+
+                const startSocket = () => {
+                    clearTimeout(state.reconnectTimer);
+                    setConnection('Connecting to Deriv…');
+                    const socket = new WebSocket(WS_URL);
+                    state.socket = socket;
+
+                    socket.addEventListener('open', () => {
+                        if (state.socket !== socket) return;
+                        setConnection('Live · Deriv WebSocket', 'connected');
+                        log('Connected to Deriv market data.');
+                        state.accessToken = tokenFromSession();
+                        state.authorized = false;
+                        if (state.accessToken) {
+                            try {
+                                request({ authorize: state.accessToken });
+                            } catch (error) {
+                                log('Authorization request failed: ' + error.message, 'error');
+                            }
+                        }
+                        SYMBOLS.forEach(([symbol]) => {
+                            try {
+                                request({ ticks: symbol, subscribe: 1 });
+                            } catch (error) {
+                                log(`Could not subscribe to ${symbol}: ${error.message}`, 'error');
+                            }
+                        });
+                        requestHistory(state.selectedSymbol);
+                    });
+
+                    socket.addEventListener('message', event => {
+                        let data;
+                        try {
+                            data = JSON.parse(event.data);
+                        } catch (error) {
+                            log('Received an unreadable market-data message: ' + error.message, 'error');
+                            return;
+                        }
+                        if (data.error) {
+                            const message = data.error.message || 'Deriv request failed';
+                            log(message, 'error');
+                            if (data.msg_type === 'buy') {
+                                state.tradePending = false;
+                                byId('tradeAuthNote').textContent = `Trade failed: ${message}`;
+                                updateTradeButton();
+                            }
+                            if (data.msg_type === 'authorize') {
+                                state.authorized = false;
+                                state.accessToken = null;
+                                updateTradeButton();
+                            }
+                            return;
+                        }
+                        if (data.msg_type === 'authorize' && data.authorize) {
+                            state.authorized = true;
+                            state.currency = data.authorize.currency || null;
+                            state.accountId = data.authorize.loginid || null;
+                            byId('currency').value = state.currency || 'Unavailable';
+                            byId('tradeAuthNote').textContent = state.accountId
+                                ? `Authorized · ${state.accountId}`
+                                : 'Authorized Deriv account';
+                            updateTradeButton();
+                            log(`Authorized Deriv account${state.accountId ? ` ${state.accountId}` : ''}.`);
+                            return;
+                        }
+                        if (data.msg_type === 'history' && data.history) {
+                            const symbol = state.historyRequestIds.get(data.req_id);
+                            state.historyRequestIds.delete(data.req_id);
+                            if (symbol) applyHistory(symbol, data);
+                            return;
+                        }
+                        if (data.msg_type === 'tick' && data.tick) {
+                            applyTick(data.tick);
+                            return;
+                        }
+                        if (data.msg_type === 'buy' && data.buy) {
+                            state.tradePending = false;
+                            updateTradeButton();
+                            log(
+                                `Trade placed · contract ${data.buy.contract_id} · purchase price ${data.buy.buy_price}.`,
+                                'warn'
+                            );
+                            byId('tradeAuthNote').textContent = `Trade placed · contract ${data.buy.contract_id}`;
+                        }
+                    });
+
+                    socket.addEventListener('close', () => {
+                        if (state.socket !== socket) return;
+                        state.authorized = false;
+                        updateTradeButton();
+                        setConnection('Connection lost · reconnecting', 'error');
+                        log('WebSocket closed. Reconnecting…', 'warn');
+                        state.reconnectTimer = setTimeout(startSocket, 2000);
+                    });
+
+                    socket.addEventListener('error', () => {
+                        if (state.socket === socket) {
+                            setConnection('Connection error', 'error');
+                            log('WebSocket connection error. Check network access and try again.', 'error');
+                        }
+                    });
+                };
+
+                const applyHistory = (symbol, response) => {
+                    const market = markets.get(symbol);
+                    if (!market || !Array.isArray(response.history.prices)) return;
+                    const times = Array.isArray(response.history.times) ? response.history.times : [];
+                    const historyTicks = response.history.prices.map((quote, index) => ({
+                        quote: Number(quote),
+                        digit: getDigit(quote, response.pip_size),
+                        epoch: Number(times[index] || 0),
+                    }));
+                    const latestHistoryEpoch = historyTicks.length ? historyTicks[historyTicks.length - 1].epoch : 0;
+                    const newerTicks = market.ticks.filter(tick => tick.epoch > latestHistoryEpoch);
+                    const merged = [...historyTicks, ...newerTicks]
+                        .sort((left, right) => left.epoch - right.epoch)
+                        .slice(-500);
+                    market.pipSize = response.pip_size;
+                    market.ticks = merged;
+                    const latest = market.ticks[market.ticks.length - 1];
+                    if (latest) {
+                        market.price = latest.quote;
+                        market.digit = latest.digit;
+                    }
+                    if (symbol === state.selectedSymbol) {
+                        renderSelectedMarket();
+                        const updated = byId('updated');
+                        if (updated) updated.textContent = `History synced · ${new Date().toLocaleTimeString()}`;
+                    }
+                    log(`${symbol}: loaded ${historyTicks.length} historical ticks.`);
+                };
+
+                const applyTick = tick => {
+                    const market = markets.get(tick.symbol);
+                    if (!market || !Number.isFinite(Number(tick.quote))) return;
+                    const quote = Number(tick.quote);
+                    const epoch = Number(tick.epoch || Math.floor(Date.now() / 1000));
+                    const digit = getDigit(quote, tick.pip_size ?? market.pipSize);
+                    market.pipSize = tick.pip_size ?? market.pipSize;
+                    market.price = quote;
+                    market.digit = digit;
+                    const previous = market.ticks[market.ticks.length - 1];
+                    if (!previous || previous.epoch !== epoch) {
+                        market.ticks.push({ quote, digit, epoch });
+                        if (market.ticks.length > 500) market.ticks.shift();
+                    }
+                    if (tick.symbol === state.selectedSymbol) {
+                        renderSelectedMarket();
+                        const updated = byId('updated');
+                        if (updated) updated.textContent = `Updated ${new Date().toLocaleTimeString()}`;
+                    }
+                };
+
+                const playRadarBeep = () => {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (!AudioContext) {
+                        log('Web Audio is not available in this browser; scan completed without sound.', 'warn');
+                        return;
+                    }
+                    const audio = new AudioContext();
+                    const oscillator = audio.createOscillator();
+                    const gain = audio.createGain();
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(880, audio.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(660, audio.currentTime + 0.18);
+                    gain.gain.setValueAtTime(0.0001, audio.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.14, audio.currentTime + 0.025);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + 0.23);
+                    oscillator.connect(gain);
+                    gain.connect(audio.destination);
+                    oscillator.start();
+                    oscillator.stop(audio.currentTime + 0.24);
+                    oscillator.addEventListener('ended', () => audio.close());
+                };
+
+                const calculateSignal = () => {
+                    const ticks = currentTicks();
+                    if (ticks.length < Math.min(20, state.windowSize)) {
+                        throw new Error(
+                            `Not enough ticks yet (${ticks.length}/${Math.min(20, state.windowSize)} minimum).`
+                        );
+                    }
+                    const counts = Array(10).fill(0);
+                    ticks.forEach(tick => {
+                        counts[tick.digit] += 1;
+                    });
+                    const rate = count => (count / ticks.length) * 100;
+                    const hottestDigit = counts.indexOf(Math.max(...counts));
+                    const coldestDigit = counts.indexOf(Math.min(...counts));
+                    const strategy = byId('strategy').value;
+                    let signal;
+
+                    if (strategy === 'match-diff') {
+                        const matchRate = rate(counts[hottestDigit]);
+                        const differRate = 100 - rate(counts[coldestDigit]);
+                        signal =
+                            matchRate > differRate
+                                ? {
+                                      label: `MATCH ${hottestDigit}`,
+                                      contractType: 'DIGITMATCH',
+                                      barrier: hottestDigit,
+                                      confidence: matchRate,
+                                  }
+                                : {
+                                      label: `DIFFERS ${coldestDigit}`,
+                                      contractType: 'DIGITDIFF',
+                                      barrier: coldestDigit,
+                                      confidence: differRate,
+                                  };
+                    } else if (strategy === 'even-odd') {
+                        const evenCount = counts.reduce(
+                            (total, count, digit) => total + (digit % 2 === 0 ? count : 0),
+                            0
+                        );
+                        const oddCount = ticks.length - evenCount;
+                        signal =
+                            evenCount >= oddCount
+                                ? { label: 'EVEN', contractType: 'DIGITEVEN', confidence: rate(evenCount) }
+                                : { label: 'ODD', contractType: 'DIGITODD', confidence: rate(oddCount) };
+                    } else {
+                        const overCount = counts.slice(5).reduce((total, count) => total + count, 0);
+                        const underCount = ticks.length - overCount;
+                        signal =
+                            overCount >= underCount
+                                ? {
+                                      label: 'OVER 4',
+                                      contractType: 'DIGITOVER',
+                                      barrier: 4,
+                                      confidence: rate(overCount),
+                                  }
+                                : {
+                                      label: 'UNDER 5',
+                                      contractType: 'DIGITUNDER',
+                                      barrier: 5,
+                                      confidence: rate(underCount),
+                                  };
+                    }
+                    return { ...signal, sampleSize: ticks.length, symbol: state.selectedSymbol };
+                };
+
+                const runScan = () => {
+                    if (state.scanning) return;
+                    state.scanning = true;
+                    state.signal = null;
+                    byId('scanButton').disabled = true;
+                    byId('scanButton').textContent = 'Scanning live frequency…';
+                    byId('scanProgress').classList.add('running');
+                    byId('signalBox').classList.remove('ready');
+                    byId('signalTitle').textContent = 'Scanning…';
+                    byId('signalDetail').textContent =
+                        `Analyzing ${state.selectedSymbol} over ${state.windowSize} ticks.`;
+                    updateTradeButton();
+                    log(`Scanning ${state.selectedSymbol} · ${state.windowSize} tick window…`);
+                    if (state.soundOn) playRadarBeep();
+                    window.setTimeout(() => {
+                        try {
+                            const signal = calculateSignal();
+                            state.signal = signal;
+                            byId('signalBox').classList.add('ready');
+                            byId('signalTitle').textContent = `${signal.label} · ${signal.confidence.toFixed(1)}%`;
+                            byId('signalDetail').textContent =
+                                `${signal.symbol} · based on ${signal.sampleSize} ticks. Frequency is historical only and is not a forecast.`;
+                            log(
+                                `Signal: ${signal.label} at ${signal.confidence.toFixed(1)}% observed frequency.`,
+                                'warn'
+                            );
+                            updateTradeButton();
+                        } catch (error) {
+                            byId('signalTitle').textContent = 'Scan unavailable';
+                            byId('signalDetail').textContent = error.message;
+                            log(error.message, 'warn');
+                        } finally {
+                            state.scanning = false;
+                            byId('scanButton').disabled = false;
+                            byId('scanButton').textContent = '◉  Start Signal Scan';
+                            window.setTimeout(() => byId('scanProgress').classList.remove('running'), 250);
+                        }
+                    }, 1800);
+                };
+
+                const updateTradeButton = () => {
+                    const canTrade = state.authorized && !!state.currency && !!state.signal && !state.tradePending;
+                    byId('tradeButton').disabled = !canTrade;
+                    byId('tradeArea').hidden = !state.accessToken;
+                    byId('loginNote').hidden = !!state.accessToken;
+                    if (state.accessToken && !state.authorized) {
+                        byId('tradeAuthNote').textContent = 'Authorizing your Deriv account…';
+                    } else if (state.authorized && !state.currency) {
+                        byId('tradeAuthNote').textContent =
+                            'Account currency unavailable; trade execution is disabled.';
+                    } else if (!state.accessToken) {
+                        byId('loginNote').textContent =
+                            'Log in to Deriv to enable one-click signal execution. Scanning is available without signing in.';
+                    }
+                };
+
+                const executeTrade = () => {
+                    if (!state.signal || !state.authorized || state.tradePending) return;
+                    const stake = Number(byId('stake').value);
+                    if (!Number.isFinite(stake) || stake < 0.35) {
+                        byId('tradeAuthNote').textContent = 'Enter a valid stake of at least 0.35.';
+                        log('Trade not sent: stake must be at least 0.35.', 'error');
+                        return;
+                    }
+                    const parameters = {
+                        amount: stake,
+                        basis: 'stake',
+                        contract_type: state.signal.contractType,
+                        currency: state.currency,
+                        duration: 1,
+                        duration_unit: 't',
+                        symbol: state.signal.symbol,
+                    };
+                    if (state.signal.barrier !== undefined) parameters.barrier = String(state.signal.barrier);
+                    try {
+                        request({ buy: 1, price: stake, parameters });
+                        state.tradePending = true;
+                        updateTradeButton();
+                        byId('tradeAuthNote').textContent =
+                            `Trade request sent · ${state.signal.label} · ${stake} ${state.currency}`;
+                        log(
+                            `Submitted 1-tick ${state.signal.contractType} trade for ${stake} ${state.currency}.`,
+                            'warn'
+                        );
+                    } catch (error) {
+                        byId('tradeAuthNote').textContent = error.message;
+                        log('Trade request failed: ' + error.message, 'error');
+                    }
+                };
+
+                const setupMatrix = () => {
+                    const canvas = byId('matrix');
+                    const context = canvas.getContext('2d');
+                    const glyphs = '01ABCDEFGHIJKLMNOPQRSTUVWXYZ<>[]{}#$%';
+                    let columns = [];
+                    let width = 0;
+                    let height = 0;
+                    const resize = () => {
+                        const ratio = Math.min(window.devicePixelRatio || 1, 2);
+                        width = window.innerWidth;
+                        height = window.innerHeight;
+                        canvas.width = width * ratio;
+                        canvas.height = height * ratio;
+                        context.setTransform(ratio, 0, 0, ratio, 0, 0);
+                        columns = Array(Math.ceil(width / 14))
+                            .fill(0)
+                            .map(() => (Math.random() * -height) / 14);
+                    };
+                    const paint = () => {
+                        context.fillStyle = 'rgba(11, 14, 20, 0.12)';
+                        context.fillRect(0, 0, width, height);
+                        context.font = '12px ui-monospace, monospace';
+                        columns.forEach((y, index) => {
+                            const glyph = glyphs[Math.floor(Math.random() * glyphs.length)];
+                            context.fillStyle = Math.random() > 0.96 ? '#a7f3d0' : '#22c55e';
+                            context.fillText(glyph, index * 14, y * 14);
+                            if (y * 14 > height && Math.random() > 0.975) columns[index] = 0;
+                            else columns[index] += 0.58;
+                        });
+                        requestAnimationFrame(paint);
+                    };
+                    resize();
+                    window.addEventListener('resize', resize);
+                    requestAnimationFrame(paint);
+                };
+
+                const init = () => {
+                    drawMarkets();
+                    drawWindows();
+                    renderSelectedMarket();
+                    state.accessToken = tokenFromSession();
+                    updateTradeButton();
+                    byId('soundToggle').addEventListener('click', () => {
+                        state.soundOn = !state.soundOn;
+                        byId('soundToggle').textContent = state.soundOn ? 'SOUND ON' : 'SOUND OFF';
+                        byId('soundToggle').setAttribute('aria-pressed', String(state.soundOn));
+                    });
+                    byId('scanButton').addEventListener('click', runScan);
+                    byId('tradeButton').addEventListener('click', executeTrade);
+                    byId('strategy').addEventListener('change', () => {
+                        state.signal = null;
+                        byId('signalBox').classList.remove('ready');
+                        byId('signalTitle').textContent = 'No signal yet';
+                        byId('signalDetail').textContent = 'Run a new scan to calculate this strategy.';
+                        updateTradeButton();
+                    });
+                    setupMatrix();
+                    startSocket();
+                };
+
+                init();
+            })();
+        </script>
+    </body>
+</html>

@@ -87,6 +87,10 @@ const copyConfig = base => {
             to: 'bot-builder',
         },
         {
+            from: path.resolve(__dirname, '../src/public/scanner-bot'),
+            to: 'scanner-bot',
+        },
+        {
             from: path.resolve(__dirname, '../src/public/images/common/callback_loader.gif'),
             to: 'public/images/common/callback_loader.gif',
         },

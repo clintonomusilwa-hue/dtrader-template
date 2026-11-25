@@ -91,6 +91,13 @@ function renderPanel() {
         }" style="width:100%;height:100%;border:none;display:block;"></iframe>`;
         return;
     }
+    if (tab === 'Scanner Bot') {
+        panel.style.display = 'block';
+        panel.style.padding = '0';
+        panel.innerHTML =
+            '<iframe title="Scanner Bot" src="/scanner-bot/index.html" style="width:100%;height:100%;border:none;display:block;"></iframe>';
+        return;
+    }
     panel.style.display = 'block';
     panel.style.padding = '24px';
     panel.innerHTML = `<div class="dp-panel-anim" style="max-width:600px;margin:40px auto;background:#1e293b;padding:24px;border-radius:12px;border:1px solid #334155;text-align:center;"><h2 style="margin:0 0 8px;color:#10B981;">${
