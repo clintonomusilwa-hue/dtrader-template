@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DP Bot Builder</title>
+<script src="https://unpkg.com"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;font-family:Inter,system-ui,sans-serif}
+  body{background:#0b1120;color:#e2e8f0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+  .bar{height:48px;background:#0f172a;border-bottom:1px solid #1e293b;display:flex;align-items:center;gap:10px;padding:0 16px}
+  .brand{font-weight:700;color:#38bdf8;font-size:14px;margin-right:auto;display:flex;align-items:center;gap:8px}
+  .btn{background:#1e293b;color:#e2e8f0;border:1px solid #334155;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer}
+  .btn:hover{background:#334155}
+  .btn.run{background:#10b981;color:#052e16;border-color:#10b981}
+  .btn.stop{background:#ef4444;color:#fff;border-color:#ef4444;display:none}
+  .main{flex:1;display:flex;overflow:hidden}
+  #blocklyDiv{flex:1;height:100%}
+  .side{width:320px;background:#0f172a;border-left:1px solid #1e293b;display:flex;flex-direction:column;padding:12px;gap:10px}
+  .card{background:#1e293b;border:1px solid #334155;border-radius:8px;padding:10px}
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px}
+  .stat-val{font-size:15px;font-weight:700;color:#38bdf8;margin-top:2px}
+  .log{flex:1;overflow-y:auto;font-family:monospace;font-size:11px;line-height:1.5;color:#94a3b8}
+  .win{color:#10b981}.loss{color:#f87171}
+</style>
+</head>
+<body>
+<div class="bar">
+  <div class="brand">🧩 Deriv Blockly Bot Builder <span id="tickBadge" style="font-size:11px;color:#10b981;background:#064e3b;padding:2px 8px;border-radius:99px">Connecting...</span></div>
+  <input type="file" id="xmlIn" accept=".xml" style="display:none">
+  <button class="btn" onclick="document.getElementById('xmlIn').click()">Import XML</button>
+  <button class="btn" onclick="exportXML()">Export XML</button>
+  <button class="btn" onclick="resetBlocks()">Reset Blocks</button>
+  <button class="btn run" id="runBtn" onclick="startBot()">▶ Run Bot</button>
+  <button class="btn stop" id="stopBtn" onclick="stopBot()">■ Stop Bot</button>
+</div>
+<div class="main">
+  <div id="blocklyDiv"></div>
+  <div class="side">
+    <div class="card stat-grid">
+      <div>Market<div class="stat-val" id="mDisp">R_75</div></div>
+      <div>Last Digit<div class="stat-val" id="dDisp">-</div></div>
+      <div>Runs / Wins<div class="stat-val" id="rwDisp">0 / 0</div></div>
+      <div>Net P/L<div class="stat-val" id="plDisp">$0.00</div></div>
+    </div>
+    <div class="card" style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+      <div style="font-size:12px;font-weight:700;margin-bottom:6px;color:#cbd5e1">Execution Journal</div>
+      <div class="log" id="logBox"></div>
+    </div>
+  </div>
+</div>
+<script>
+Blockly.defineBlocksWithJsonArray([
+  {type:"trade_def",message0:"1. Trade Parameters %1 Market %2 %3 Contract %4 %5 Stake ($) %6 Ticks %7 Prediction %8",
+   args0:[{type:"input_dummy"},{type:"field_dropdown",name:"MKT",options:[["Volatility 75","R_75"],["Volatility 100","R_100"],["Volatility 10 (1s)","1HZ10V"],["Volatility 50","R_50"],["Jump 25","JD25"]]},{type:"input_dummy"},
+   {type:"field_dropdown",name:"TYPE",options:[["Digit Over","DIGITOVER"],["Digit Under","DIGITUNDER"],["Digit Even","DIGITEVEN"],["Digit Odd","DIGITODD"],["Rise","CALL"],["Fall","PUT"]]},{type:"input_dummy"},
+   {type:"field_number",name:"STAKE",value:1,min:0.35},{type:"field_number",name:"TICKS",value:1,min:1,max:10},{type:"field_number",name:"PRED",value:4,min:0,max:9}],
+   nextStatement:null,colour:210},
+  {type:"purchase_cond",message0:"2. Purchase Condition %1 Execute when %2",
+   args0:[{type:"input_dummy"},{type:"field_dropdown",name:"COND",options:[["Every Tick","ALWAYS"],["Last Digit is Even","EVEN"],["Last Digit is Odd","ODD"],["Last Digit > 5","GT5"],["Last Digit < 4","LT4"]]}],
+   previousStatement:null,nextStatement:null,colour:160},
+  {type:"restart_cond",message0:"3. After Trade Result %1 Martingale Multiplier %2 %3 Max Loss Stop ($) %4",
+   args0:[{type:"input_dummy"},{type:"field_number",name:"MART",value:2.1,min:1},{type:"input_dummy"},{type:"field_number",name:"SL",value:20,min:1}],
+   previousStatement:null,colour:35}
+]);
+const toolbox={kind:"categoryToolbox",contents:[
+  {kind:"category",name:"Trade Setup",colour:210,contents:[{kind:"block",type:"trade_def"}]},
+  {kind:"category",name:"Purchase Logic",colour:160,contents:[{kind:"block",type:"purchase_cond"}]},
+  {kind:"category",name:"Risk & Restart",colour:35,contents:[{kind:"block",type:"restart_cond"}]}
+]};
+const ws=Blockly.inject("blocklyDiv",{toolbox,theme:Blockly.Themes.Dark,grid:{spacing:20,length:3,colour:"#1e293b",snap:true}});
+function resetBlocks(){
+  ws.clear();
+  const xml=Blockly.utils.xml.textToDom('<xml><block type="trade_def" x="40" y="30"><next><block type="purchase_cond"><next><block type="restart_cond"></block></next></block></next></block></xml>');
+  Blockly.Xml.domToWorkspace(xml,ws);
+}
+resetBlocks();
+function exportXML(){
+  const txt=Blockly.Xml.domToPrettyText(Blockly.Xml.workspaceToDom(ws));
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([txt],{type:"text/xml"}));a.download="dp-strategy.xml";a.click();
+}
+document.getElementById("xmlIn").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{ws.clear();Blockly.Xml.domToWorkspace(Blockly.utils.xml.textToDom(r.result),ws);log("Imported "+f.name);};r.readAsText(f);};
+let running=false,curStake=1,runs=0,wins=0,pl=0,lastDigit=0,curSym="R_75",dws=null;
+function log(m,cls=""){const b=document.getElementById("logBox");b.innerHTML=`<div class="${cls}">[${new Date().toLocaleTimeString()}] ${m}</div>`+b.innerHTML;}
+function connectFeed(sym){
+  curSym=sym;document.getElementById("mDisp").textContent=sym;
+  if(dws)try{dws.close();}catch(_){}
+  dws=new WebSocket("wss://://derivws.com");
+  dws.onopen=()=>{document.getElementById("tickBadge").textContent="Live Deriv Ticks";dws.send(JSON.stringify({ticks:sym,subscribe:1}));};
+  dws.onmessage=ev=>{const d=JSON.parse(ev.data);if(d.tick){const q=String(d.tick.quote);lastDigit=Number(q[q.length-1]);document.getElementById("dDisp").textContent=lastDigit;if(running)onTick();}};
+}
+connectFeed("R_75");
+function getCfg(){
+  const td=ws.getBlocksByType("trade_def")[0],pc=ws.getBlocksByType("purchase_cond")[0],rc=ws.getBlocksByType("restart_cond")[0];
+  return{mkt:td?td.getFieldValue("MKT"):"R_75",type:td?td.getFieldValue("TYPE"):"DIGITOVER",stake:td?Number(td.getFieldValue("STAKE")):1,
+    ticks:td?Number(td.getFieldValue("TICKS")):1,pred:td?Number(td.getFieldValue("PRED")):4,
+    cond:pc?pc.getFieldValue("COND"):"ALWAYS",mart:rc?Number(rc.getFieldValue("MART")):2.1,sl:rc?Number(rc.getFieldValue("SL")):20};
+}
+function startBot(){const c=getCfg();curStake=c.stake;running=true;if(c.mkt!==curSym)connectFeed(c.mkt);document.getElementById("runBtn").style.display="none";document.getElementById("stopBtn").style.display="inline-block";log("Bot started on "+c.mkt+" ("+c.type+")");}
+function stopBot(){running=false;document.getElementById("runBtn").style.display="inline-block";document.getElementById("stopBtn").style.display="none";log("Bot stopped.");}
+function onTick(){
+  const c=getCfg();
+  const ok=c.cond==="ALWAYS"||(c.cond==="EVEN"&&lastDigit%2===0)||(c.cond==="ODD"&&lastDigit%2===1)||(c.cond==="GT5"&&lastDigit>5)||(c.cond==="LT4"&&lastDigit<4);
+  if(!ok)return;
+  runs++;
+  const win=c.type==="DIGITOVER"?lastDigit>c.pred:c.type==="DIGITUNDER"?lastDigit<c.pred:c.type==="DIGITEVEN"?lastDigit%2===0:c.type==="DIGITODD"?lastDigit%2===1:Math.random()>0.48;
+  const delta=win?+(curStake*0.85).toFixed(2):-curStake;
+  pl=+(pl+delta).toFixed(2);if(win){wins++;curStake=c.stake;}else{curStake=+(curStake*c.mart).toFixed(2);}
+  document.getElementById("rwDisp").textContent=`${runs} / ${wins}`;
+  document.getElementById("plDisp").textContent=(pl>=0?"+$":"-$")+Math.abs(pl).toFixed(2);
+  log(`Digit ${lastDigit} → ${win?"WIN":"LOSS"} (${delta>=0?"+":""}${delta.toFixed(2)})`,win?"win":"loss");
+  if(pl<=-c.sl){log("Stop-loss reached!");stopBot();}
+}
+</script>
+</body></html>
