@@ -75,11 +75,18 @@ function renderPanel() {
         panel.style.display = 'none';
         return;
     }
+    if (tab === 'Bot Builder') {
+        panel.style.display = 'block';
+        panel.style.padding = '0';
+        panel.innerHTML =
+            '<iframe src="/bot-builder/" style="width:100%;height:100%;border:none;display:block;"></iframe>';
+        return;
+    }
     if (tab === 'Advanced Bot') {
         panel.style.display = 'block';
         panel.style.padding = '0';
         const dp = encodeURIComponent(JSON.stringify({ ss: { ...sessionStorage }, ls: { ...localStorage } }));
-        panel.innerHTML = `<iframe src="/advanced-bot/index.html?v=38#dp=${
+        panel.innerHTML = `<iframe src="/advanced-bot/index.html?v=37#dp=${
             dp
         }" style="width:100%;height:100%;border:none;display:block;"></iframe>`;
         return;
