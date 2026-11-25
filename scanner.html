@@ -1,0 +1,286 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+        <title>Scanner Bot</title>
+    </head>
+    <body
+        style="
+            margin: 0;
+            background: #0b0e14;
+            color: #e2e8f0;
+            font-family:
+                Segoe UI,
+                monospace;
+        "
+    >
+        <div style="position: relative; min-height: 100vh; padding: 20px; box-sizing: border-box; overflow: hidden">
+            <canvas
+                id="bg"
+                style="
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    opacity: 0.2;
+                    pointer-events: none;
+                "
+            ></canvas>
+            <div
+                style="
+                    position: relative;
+                    z-index: 2;
+                    max-width: 720px;
+                    margin: 10px auto;
+                    padding: 22px;
+                    background: #0f172a;
+                    border: 1px solid #334155;
+                    border-radius: 12px;
+                "
+            >
+                <div
+                    style="
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        border-bottom: 1px solid #1e293b;
+                        padding-bottom: 12px;
+                        margin-bottom: 16px;
+                    "
+                >
+                    <div>
+                        <h2 style="margin: 0; color: #38bdf8">DP Signal Scanner Bot</h2>
+                        <small id="auth-st" style="color: #94a3b8">Checking OAuth...</small>
+                    </div>
+                    <button
+                        id="snd-btn"
+                        style="
+                            background: #1e293b;
+                            color: #38bdf8;
+                            border: 1px solid #334155;
+                            padding: 6px 12px;
+                            border-radius: 6px;
+                            cursor: pointer;
+                        "
+                    >
+                        Sound: ON
+                    </button>
+                </div>
+                <div
+                    style="
+                        display: grid;
+                        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+                        gap: 12px;
+                        margin-bottom: 16px;
+                    "
+                >
+                    <select
+                        id="mkt"
+                        style="
+                            padding: 10px;
+                            background: #020617;
+                            color: #fff;
+                            border: 1px solid #334155;
+                            border-radius: 6px;
+                        "
+                    >
+                        <option value="R_10">Volatility 10</option>
+                        <option value="1HZ10V">Volatility 10 (1s)</option>
+                        <option value="R_25">Volatility 25</option>
+                        <option value="1HZ25V">Volatility 25 (1s)</option>
+                        <option value="R_50">Volatility 50</option>
+                        <option value="1HZ50V">Volatility 50 (1s)</option>
+                        <option value="R_75">Volatility 75</option>
+                        <option value="1HZ75V">Volatility 75 (1s)</option>
+                        <option value="R_100">Volatility 100</option>
+                        <option value="1HZ100V" selected>Volatility 100 (1s)</option>
+                    </select>
+                    <select
+                        id="strat"
+                        style="
+                            padding: 10px;
+                            background: #020617;
+                            color: #fff;
+                            border: 1px solid #334155;
+                            border-radius: 6px;
+                        "
+                    >
+                        <option value="md">Matches &amp; Differs</option>
+                        <option value="eo">Even / Odd</option>
+                        <option value="ou">Over 4 / Under 5</option>
+                    </select>
+                    <select
+                        id="cnt"
+                        style="
+                            padding: 10px;
+                            background: #020617;
+                            color: #fff;
+                            border: 1px solid #334155;
+                            border-radius: 6px;
+                        "
+                    >
+                        <option value="50">50 Ticks</option>
+                        <option value="100" selected>100 Ticks</option>
+                        <option value="250">250 Ticks</option>
+                    </select>
+                </div>
+                <div
+                    style="
+                        background: #020617;
+                        border: 1px solid #1e293b;
+                        border-radius: 8px;
+                        padding: 14px;
+                        text-align: center;
+                        margin-bottom: 16px;
+                    "
+                >
+                    <div style="font-size: 12px; color: #94a3b8">LIVE PRICE</div>
+                    <div id="price" style="font-size: 26px; font-weight: bold; color: #22c55e">Connecting...</div>
+                    <div>
+                        Last Digit:
+                        <span
+                            id="ldigit"
+                            style="
+                                padding: 2px 10px;
+                                background: #1e293b;
+                                color: #38bdf8;
+                                font-weight: bold;
+                                border-radius: 4px;
+                            "
+                            >-</span
+                        >
+                    </div>
+                </div>
+                <div
+                    id="grid"
+                    style="
+                        display: grid;
+                        grid-template-columns: repeat(10, 1fr);
+                        gap: 5px;
+                        margin-bottom: 18px;
+                        text-align: center;
+                    "
+                ></div>
+                <div style="text-align: center">
+                    <button
+                        id="scan-btn"
+                        style="
+                            background: #0284c7;
+                            color: #fff;
+                            border: none;
+                            padding: 12px 28px;
+                            font-size: 15px;
+                            font-weight: bold;
+                            border-radius: 8px;
+                            cursor: pointer;
+                        "
+                    >
+                        Start Signal Scan
+                    </button>
+                </div>
+                <div
+                    id="res-box"
+                    style="
+                        display: none;
+                        margin-top: 18px;
+                        background: #020617;
+                        border: 1px solid #22c55e;
+                        border-radius: 8px;
+                        padding: 14px;
+                        font-family: monospace;
+                    "
+                >
+                    <div id="logs" style="font-size: 13px; line-height: 1.6; color: #a7f3d0"></div>
+                    <div
+                        id="trade-bar"
+                        style="
+                            display: none;
+                            margin-top: 12px;
+                            padding-top: 10px;
+                            border-top: 1px dashed #334155;
+                            gap: 8px;
+                            align-items: center;
+                        "
+                    >
+                        <input
+                            id="stk"
+                            type="number"
+                            value="1"
+                            min="0.35"
+                            step="0.1"
+                            style="
+                                width: 70px;
+                                padding: 6px;
+                                background: #0f172a;
+                                color: #fff;
+                                border: 1px solid #334155;
+                                border-radius: 4px;
+                            "
+                        />
+                        <button
+                            id="buy-btn"
+                            style="
+                                background: #22c55e;
+                                color: #020617;
+                                font-weight: bold;
+                                border: none;
+                                padding: 8px 14px;
+                                border-radius: 6px;
+                                cursor: pointer;
+                            "
+                        >
+                            Execute Trade
+                        </button>
+                        <span id="fb" style="font-size: 12px; color: #38bdf8"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script>
+            const APP_ID='1089'; let ws=null, ticks=[], pip=2, snd=true, tmr=null, sig=null;
+            const tok=()=>localStorage.getItem('deriv_token');
+            document.getElementById('auth-st').textContent = tok() ? 'OAuth Connected (1-Click Ready)' : 'Scan-Only Mode (Log in at top right)';
+            const cv=document.getElementById('bg'), cx=cv.getContext('2d'), lgs=[];
+            function rsz(){cv.width=cv.parentElement.offsetWidth;cv.height=cv.parentElement.offsetHeight;} window.onresize=rsz; rsz();
+            setInterval(()=>{lgs.push({t:'[INFO] Scanning Deriv tick stream...',x:Math.random()*(cv.width-180),y:cv.height+15});if(lgs.length>35)lgs.shift();},450);
+            (function anim(){cx.clearRect(0,0,cv.width,cv.height);cx.fillStyle='#22c55e';cx.font='12px monospace';lgs.forEach(l=>{l.y-=1;cx.fillText(l.t,l.x,l.y);});requestAnimationFrame(anim);})();
+            let ac=null; function beep(f){if(!snd)return;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();const o=ac.createOscillator(),g=ac.createGain();o.type='sawtooth';o.frequency.value=f;g.gain.value=0.03;o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+0.12);}catch(e){}}
+            document.getElementById('snd-btn').onclick=function(){snd=!snd;this.textContent=snd?'Sound: ON':'Sound: OFF';};
+            function draw(){
+              const g=document.getElementById('grid'); if(!ticks.length)return;
+              const c=Array(10).fill(0); ticks.forEach(d=>c[d]++); const mx=Math.max(...c),mn=Math.min(...c);
+              g.innerHTML=c.map((v,i)=>{const col=v===mx?'#22c55e':(v===mn?'#ef4444':'#94a3b8');return '<div style="background:#020617;border:1px solid '+col+';border-radius:6px;padding:5px 2px;"><b style="color:'+col+'">'+i+'</b><div style="font-size:11px;">'+((v/ticks.length)*100).toFixed(1)+'%</div></div>';}).join('');
+            }
+            function conn(){
+              if(ws)ws.close(); const s=document.getElementById('mkt').value, n=parseInt(document.getElementById('cnt').value,10); ticks=[];
+              ws=new WebSocket('wss://://derivws.com);
+              ws.onopen=()=>ws.send(JSON.stringify({ticks_history:s,adjust_start_time:1,count:n,end:'latest',style:'ticks',subscribe:1}));
+              ws.onmessage=e=>{const d=JSON.parse(e.data);
+                if(d.history){pip=d.pip_size||2;ticks=d.history.prices.map(p=>parseInt(Number(p).toFixed(pip).slice(-1),10));document.getElementById('price').textContent=Number(d.history.prices.slice(-1)[0]).toFixed(pip);document.getElementById('ldigit').textContent=ticks.slice(-1)[0];draw();}
+                else if(d.tick){pip=d.tick.pip_size||pip;const dg=parseInt(Number(d.tick.quote).toFixed(pip).slice(-1),10);ticks.push(dg);if(ticks.length>n)ticks.shift();document.getElementById('price').textContent=Number(d.tick.quote).toFixed(pip);document.getElementById('ldigit').textContent=dg;draw();}
+              };
+            }
+            document.getElementById('mkt').onchange=conn; document.getElementById('cnt').onchange=conn; conn();
+            document.getElementById('scan-btn').onclick=()=>{
+              if(ticks.length<10)return; const rb=document.getElementById('res-box'),lg=document.getElementById('logs'),tb=document.getElementById('trade-bar');
+              const s=document.getElementById('mkt').value, st=document.getElementById('strat').value; rb.style.display='block'; tb.style.display='none'; lg.innerHTML=''; clearInterval(tmr);
+              let k=0; tmr=setInterval(()=>{if(k<3){lg.innerHTML+='<div>> Analysing '+s+' ('+(k+1)+'/3)...</div>';beep(600+k*250);k++;}else{clearInterval(tmr);beep(1200);
+                const c=Array(10).fill(0);ticks.forEach(d=>c[d]++);const tot=ticks.length;
+                if(st==='md'){const h=c.indexOf(Math.max(...c)),l=c.indexOf(Math.min(...c));lg.innerHTML+='<div><b>MATCHES '+h+'</b> ('+((c[h]/tot)*100).toFixed(1)+'%) | <b>DIFFERS '+l+'</b> ('+((c[l]/tot)*100).toFixed(1)+'%)</div>';sig={symbol:s,contract_type:'DIGITDIFF',barrier:String(l)};}
+                else if(st==='eo'){const ev=ticks.filter(d=>d%2===0).length,pk=ev>=tot-ev?'DIGITEVEN':'DIGITODD';lg.innerHTML+='<div><b>Pick: '+(pk==='DIGITEVEN'?'EVEN':'ODD')+'</b></div>';sig={symbol:s,contract_type:pk};}
+                else{const ov=ticks.filter(d=>d>4).length,pk=ov>=tot-ov?'DIGITOVER':'DIGITUNDER';lg.innerHTML+='<div><b>Pick: '+(pk==='DIGITOVER'?'OVER 4':'UNDER 5')+'</b></div>';sig={symbol:s,contract_type:pk,barrier:pk==='DIGITOVER'?'4':'5'};}
+                if(tok())tb.style.display='flex';}},500);
+            };
+            document.getElementById('buy-btn').onclick=()=>{
+              const t=tok();if(!t||!sig)return;const fb=document.getElementById('fb'),amt=parseFloat(document.getElementById('stk').value)||1;fb.textContent='Sending...';
+              const tw=new WebSocket('wss://://derivws.com);
+              tw.onopen=()=>tw.send(JSON.stringify({authorize:t}));
+              tw.onmessage=e=>{const r=JSON.parse(e.data);if(r.error){fb.textContent=r.error.message;tw.close();}
+                else if(r.msg_type==='authorize'){const p={amount:amt,basis:'stake',contract_type:sig.contract_type,currency:r.authorize.currency||'USD',duration:1,duration_unit:'t',symbol:sig.symbol};if(sig.barrier!==undefined)p.barrier=sig.barrier;tw.send(JSON.stringify({buy:1,price:amt,parameters:p}));}
+                else if(r.msg_type==='buy'){fb.textContent='Bought ID: '+r.buy.contract_id;tw.close();}};
+            };
+        </script>
+    </body>
+</html>

@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>DPtradershub</title>
+        <style>
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+            body {
+                background: #0b0e14;
+                color: #e2e8f0;
+                font-family: 'Segoe UI', Roboto, sans-serif;
+            }
+            .navbar {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 12px 20px;
+                background: #111827;
+                border-bottom: 1px solid #1f2937;
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+            .brand {
+                font-size: 20px;
+                font-weight: bold;
+                color: #38bdf8;
+            }
+            .nav-tabs {
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+            .nav-btn {
+                background: transparent;
+                color: #94a3b8;
+                border: 1px solid transparent;
+                padding: 8px 14px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 14px;
+                font-weight: 500;
+            }
+            .nav-btn:hover {
+                color: #fff;
+                background: #1e293b;
+            }
+            .nav-btn.active {
+                background: #1e293b;
+                color: #38bdf8;
+                border-color: #38bdf8;
+            }
+            .auth-box {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .account-select {
+                background: #0f172a;
+                color: #22c55e;
+                border: 1px solid #334155;
+                padding: 6px 10px;
+                border-radius: 6px;
+                font-weight: bold;
+                font-size: 13px;
+            }
+            .login-btn {
+                background: #ef4444;
+                color: #fff;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 6px;
+                font-weight: bold;
+                cursor: pointer;
+                font-size: 13px;
+            }
+            .logout-btn {
+                background: #334155;
+                color: #e2e8f0;
+                border: none;
+                padding: 7px 12px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 12px;
+            }
+            .main-container {
+                width: 100%;
+                height: calc(100vh - 62px);
+            }
+            iframe {
+                width: 100%;
+                height: 100%;
+                border: none;
+                background: #0b0e14;
+            }
+            .placeholder {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                height: 100%;
+                color: #64748b;
+                text-align: center;
+                padding: 20px;
+            }
+        </style>
+    </head>
+    <body>
+        <header class="navbar">
+            <div class="brand">⚡ DPtradershub</div>
+            <nav class="nav-tabs">
+                <button class="nav-btn active" data-page="scanner.html">Scanner Bot</button>
+                <button class="nav-btn" data-page="coming-soon">Digit Analyser</button>
+                <button class="nav-btn" data-page="coming-soon">Bulk Trader</button>
+                <button class="nav-btn" data-page="coming-soon">Free Bots</button>
+                <button class="nav-btn" data-page="coming-soon">Manual Trader</button>
+                <button class="nav-btn" data-page="coming-soon">Copy Trading</button>
+                <button class="nav-btn" data-page="coming-soon">Useful Docs</button>
+            </nav>
+            <div class="auth-box" id="auth-area">
+                <button class="login-btn" id="login-btn">Log in with Deriv</button>
+            </div>
+        </header>
+        <main class="main-container" id="view-container">
+            <iframe id="tool-frame" src="scanner.html"></iframe>
+        </main>
+        <script>
+            const DERIV_APP_ID = '1089';
+            (function handleOAuthRedirect() {
+                const params = new URLSearchParams(window.location.search);
+                const accounts = [];
+                let i = 1;
+                while (params.has('acct' + i) && params.has('token' + i)) {
+                    accounts.push({
+                        acct: params.get('acct' + i),
+                        token: params.get('token' + i),
+                        cur: params.get('cur' + i) || 'USD',
+                    });
+                    i++;
+                }
+                if (accounts.length > 0) {
+                    localStorage.setItem('dp_accounts', JSON.stringify(accounts));
+                    localStorage.setItem('deriv_token', accounts.token);
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
+            })();
+            const authArea = document.getElementById('auth-area');
+            const savedAccounts = JSON.parse(localStorage.getItem('dp_accounts') || '[]');
+            if (savedAccounts.length > 0) {
+                const activeToken = localStorage.getItem('deriv_token') || savedAccounts.token;
+                authArea.innerHTML =
+                    '<select class="account-select" id="acct-switcher">' +
+                    savedAccounts
+                        .map(
+                            a =>
+                                '<option value="' +
+                                a.token +
+                                '"' +
+                                (a.token === activeToken ? ' selected' : '') +
+                                '>' +
+                                a.acct +
+                                ' (' +
+                                a.cur +
+                                ')</option>'
+                        )
+                        .join('') +
+                    '</select><span id="live-balance" style="color:#22c55e;font-weight:bold;font-size:14px;">Loading...</span><button class="logout-btn" id="logout-btn">Log Out</button>';
+                const ws = new WebSocket('wss://://derivws.com' + DERIV_APP_ID);
+                ws.onopen = () => ws.send(JSON.stringify({ authorize: activeToken }));
+                ws.onmessage = e => {
+                    const data = JSON.parse(e.data);
+                    if (data.authorize) {
+                        document.getElementById('live-balance').textContent =
+                            data.authorize.balance.toFixed(2) + ' ' + data.authorize.currency;
+                        ws.send(JSON.stringify({ balance: 1, subscribe: 1 }));
+                    } else if (data.balance) {
+                        document.getElementById('live-balance').textContent =
+                            data.balance.balance.toFixed(2) + ' ' + data.balance.currency;
+                    }
+                };
+                document.getElementById('acct-switcher').addEventListener('change', e => {
+                    localStorage.setItem('deriv_token', e.target.value);
+                    location.reload();
+                });
+                document.getElementById('logout-btn').addEventListener('click', () => {
+                    localStorage.removeItem('dp_accounts');
+                    localStorage.removeItem('deriv_token');
+                    location.reload();
+                });
+            } else {
+                document.getElementById('login-btn').addEventListener('click', () => {
+                    window.location.href = 'https://deriv.com' + DERIV_APP_ID + '&l=EN&brand=deriv';
+                });
+            }
+            const viewContainer = document.getElementById('view-container');
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const page = btn.dataset.page;
+                    if (page === 'coming-soon') {
+                        viewContainer.innerHTML =
+                            '<div class="placeholder"><h2 style="color:#38bdf8;margin-bottom:8px;">🚧 ' +
+                            btn.textContent +
+                            '</h2><p>Next menu we are building together!</p></div>';
+                    } else {
+                        viewContainer.innerHTML = '<iframe src="' + page + '"></iframe>';
+                    }
+                });
+            });
+        </script>
+    </body>
+</html>
