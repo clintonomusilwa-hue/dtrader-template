@@ -62,53 +62,24 @@ Blockly.defineBlocksWithJsonArray([
    args0:[{type:"input_dummy"},{type:"field_number",name:"MART",value:2.1,min:1},{type:"input_dummy"},{type:"field_number",name:"SL",value:20,min:1}],
    previousStatement:null,colour:35}
 ]);
+const darkTheme=Blockly.Theme.defineTheme("dpDark",{base:Blockly.Themes.Classic,componentStyles:{workspaceBackgroundColour:"#0b1120",toolboxBackgroundColour:"#0f172a",toolboxForegroundColour:"#e2e8f0",flyoutBackgroundColour:"#1e293b",flyoutForegroundColour:"#e2e8f0",scrollbarColour:"#334155"}});
 const toolbox={kind:"categoryToolbox",contents:[
   {kind:"category",name:"Trade Setup",colour:210,contents:[{kind:"block",type:"trade_def"}]},
   {kind:"category",name:"Purchase Logic",colour:160,contents:[{kind:"block",type:"purchase_cond"}]},
   {kind:"category",name:"Risk & Restart",colour:35,contents:[{kind:"block",type:"restart_cond"}]}
 ]};
-const ws=Blockly.inject("blocklyDiv",{toolbox,theme:Blockly.Themes.Dark,grid:{spacing:20,length:3,colour:"#1e293b",snap:true}});
-function resetBlocks(){
-  ws.clear();
-  const xml=Blockly.utils.xml.textToDom('<xml><block type="trade_def" x="40" y="30"><next><block type="purchase_cond"><next><block type="restart_cond"></block></next></block></next></block></xml>');
-  Blockly.Xml.domToWorkspace(xml,ws);
-}
+const ws=Blockly.inject("blocklyDiv",{toolbox,theme:darkTheme,grid:{spacing:20,length:3,colour:"#1e293b",snap:true}});
+function resetBlocks(){ws.clear();Blockly.Xml.domToWorkspace(Blockly.utils.xml.textToDom('<xml><block type="trade_def" x="40" y="30"><next><block type="purchase_cond"><next><block type="restart_cond"></block></next></block></next></block></xml>'),ws);}
 resetBlocks();
-function exportXML(){
-  const txt=Blockly.Xml.domToPrettyText(Blockly.Xml.workspaceToDom(ws));
-  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([txt],{type:"text/xml"}));a.download="dp-strategy.xml";a.click();
-}
+function exportXML(){const txt=Blockly.Xml.domToPrettyText(Blockly.Xml.workspaceToDom(ws));const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([txt],{type:"text/xml"}));a.download="dp-strategy.xml";a.click();}
 document.getElementById("xmlIn").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{ws.clear();Blockly.Xml.domToWorkspace(Blockly.utils.xml.textToDom(r.result),ws);log("Imported "+f.name);};r.readAsText(f);};
 let running=false,curStake=1,runs=0,wins=0,pl=0,lastDigit=0,curSym="R_75",dws=null;
 function log(m,cls=""){const b=document.getElementById("logBox");b.innerHTML=`<div class="${cls}">[${new Date().toLocaleTimeString()}] ${m}</div>`+b.innerHTML;}
-function connectFeed(sym){
-  curSym=sym;document.getElementById("mDisp").textContent=sym;
-  if(dws)try{dws.close();}catch(_){}
-  dws=new WebSocket("wss://://derivws.com");
-  dws.onopen=()=>{document.getElementById("tickBadge").textContent="Live Deriv Ticks";dws.send(JSON.stringify({ticks:sym,subscribe:1}));};
-  dws.onmessage=ev=>{const d=JSON.parse(ev.data);if(d.tick){const q=String(d.tick.quote);lastDigit=Number(q[q.length-1]);document.getElementById("dDisp").textContent=lastDigit;if(running)onTick();}};
-}
+function connectFeed(sym){curSym=sym;document.getElementById("mDisp").textContent=sym;if(dws)try{dws.close();}catch(_){}dws=new WebSocket("wss://://derivws.com");dws.onopen=()=>{document.getElementById("tickBadge").textContent="Live Deriv Ticks";dws.send(JSON.stringify({ticks:sym,subscribe:1}));};dws.onmessage=ev=>{const d=JSON.parse(ev.data);if(d.tick){const q=Number(d.tick.quote).toFixed(d.tick.pip_size||2);lastDigit=Number(q[q.length-1]);document.getElementById("dDisp").textContent=lastDigit;if(running)onTick();}};}
 connectFeed("R_75");
-function getCfg(){
-  const td=ws.getBlocksByType("trade_def")[0],pc=ws.getBlocksByType("purchase_cond")[0],rc=ws.getBlocksByType("restart_cond")[0];
-  return{mkt:td?td.getFieldValue("MKT"):"R_75",type:td?td.getFieldValue("TYPE"):"DIGITOVER",stake:td?Number(td.getFieldValue("STAKE")):1,
-    ticks:td?Number(td.getFieldValue("TICKS")):1,pred:td?Number(td.getFieldValue("PRED")):4,
-    cond:pc?pc.getFieldValue("COND"):"ALWAYS",mart:rc?Number(rc.getFieldValue("MART")):2.1,sl:rc?Number(rc.getFieldValue("SL")):20};
-}
+function getCfg(){const td=ws.getBlocksByType("trade_def")[0],pc=ws.getBlocksByType("purchase_cond")[0],rc=ws.getBlocksByType("restart_cond")[0];return{mkt:td?td.getFieldValue("MKT"):"R_75",type:td?td.getFieldValue("TYPE"):"DIGITOVER",stake:td?Number(td.getFieldValue("STAKE")):1,ticks:td?Number(td.getFieldValue("TICKS")):1,pred:td?Number(td.getFieldValue("PRED")):4,cond:pc?pc.getFieldValue("COND"):"ALWAYS",mart:rc?Number(rc.getFieldValue("MART")):2.1,sl:rc?Number(rc.getFieldValue("SL")):20};}
 function startBot(){const c=getCfg();curStake=c.stake;running=true;if(c.mkt!==curSym)connectFeed(c.mkt);document.getElementById("runBtn").style.display="none";document.getElementById("stopBtn").style.display="inline-block";log("Bot started on "+c.mkt+" ("+c.type+")");}
 function stopBot(){running=false;document.getElementById("runBtn").style.display="inline-block";document.getElementById("stopBtn").style.display="none";log("Bot stopped.");}
-function onTick(){
-  const c=getCfg();
-  const ok=c.cond==="ALWAYS"||(c.cond==="EVEN"&&lastDigit%2===0)||(c.cond==="ODD"&&lastDigit%2===1)||(c.cond==="GT5"&&lastDigit>5)||(c.cond==="LT4"&&lastDigit<4);
-  if(!ok)return;
-  runs++;
-  const win=c.type==="DIGITOVER"?lastDigit>c.pred:c.type==="DIGITUNDER"?lastDigit<c.pred:c.type==="DIGITEVEN"?lastDigit%2===0:c.type==="DIGITODD"?lastDigit%2===1:Math.random()>0.48;
-  const delta=win?+(curStake*0.85).toFixed(2):-curStake;
-  pl=+(pl+delta).toFixed(2);if(win){wins++;curStake=c.stake;}else{curStake=+(curStake*c.mart).toFixed(2);}
-  document.getElementById("rwDisp").textContent=`${runs} / ${wins}`;
-  document.getElementById("plDisp").textContent=(pl>=0?"+$":"-$")+Math.abs(pl).toFixed(2);
-  log(`Digit ${lastDigit} → ${win?"WIN":"LOSS"} (${delta>=0?"+":""}${delta.toFixed(2)})`,win?"win":"loss");
-  if(pl<=-c.sl){log("Stop-loss reached!");stopBot();}
-}
+function onTick(){const c=getCfg();const ok=c.cond==="ALWAYS"||(c.cond==="EVEN"&&lastDigit%2===0)||(c.cond==="ODD"&&lastDigit%2===1)||(c.cond==="GT5"&&lastDigit>5)||(c.cond==="LT4"&&lastDigit<4);if(!ok)return;runs++;const win=c.type==="DIGITOVER"?lastDigit>c.pred:c.type==="DIGITUNDER"?lastDigit<c.pred:c.type==="DIGITEVEN"?lastDigit%2===0:c.type==="DIGITODD"?lastDigit%2===1:Math.random()>0.48;const delta=win?+(curStake*0.85).toFixed(2):-curStake;pl=+(pl+delta).toFixed(2);if(win){wins++;curStake=c.stake;}else{curStake=+(curStake*c.mart).toFixed(2);}document.getElementById("rwDisp").textContent=`${runs} / ${wins}`;document.getElementById("plDisp").textContent=(pl>=0?"+$":"-$")+Math.abs(pl).toFixed(2);log(`Digit ${lastDigit} → ${win?"WIN":"LOSS"} (${delta>=0?"+":""}${delta.toFixed(2)})`,win?"win":"loss");if(pl<=-c.sl){log("Stop-loss reached!");stopBot();}}
 </script>
 </body></html>
