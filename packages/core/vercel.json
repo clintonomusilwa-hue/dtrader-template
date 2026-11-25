@@ -1,8 +1,0 @@
-{
-  "rewrites": [
-    {
-      "source": "/bot-builder/:path*",
-      "destination": "/bot-builder/index.html"
-    }
-  ]
-}
